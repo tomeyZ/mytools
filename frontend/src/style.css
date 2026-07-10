@@ -1,0 +1,37 @@
+html {
+    background-color: #ffffff;
+    text-align: center;
+    color: white;
+    overflow: hidden;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    color: #333333;
+    font-family: "思源宋体", "Noto Serif SC", serif;
+    overflow: hidden;
+    height: 100%;
+    /*user-select: none;*/
+    /*-webkit-user-select: none;*/
+}
+
+/* 允许输入框和文本域的文字选择和复制 */
+/*input, textarea {*/
+/*    user-select: text;*/
+/*    -webkit-user-select: text;*/
+/*}*/
+
+@font-face {
+    font-family: "思源宋体", "Noto Serif SC", serif;
+    font-weight: 250;
+    src: url("https://cdn.jsdelivr.net/npm/noto-serif-sc@latest/fonts/NotoSerifSC-ExtraLight.woff2") format("woff2"),
+    url("https://cdn.jsdelivr.net/npm/noto-serif-sc@latest/fonts/NotoSerifSC-ExtraLight.woff") format("woff");
+    font-display: swap;
+}
+
+#app {
+    height: 100vh;
+    text-align: center;
+    overflow: hidden;
+}

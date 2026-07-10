@@ -1,0 +1,13 @@
+{
+  "name": "开发工具",
+  "outputfilename": "开发工具",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "version": "1.1.2",
+  "author": {
+    "name": "tomeyz",
+    "email": "tomeyz0604@gmail.com"
+  }
+}
