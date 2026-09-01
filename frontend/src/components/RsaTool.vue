@@ -5,7 +5,6 @@
       <div class="config-item inline">
         <label>密钥长度</label>
         <select v-model="keySize" class="modern-select">
-          <option :value="512">512 bit</option>
           <option :value="1024">1024 bit</option>
           <option :value="2048">2048 bit</option>
           <option :value="4096">4096 bit</option>
@@ -18,15 +17,6 @@
           <option value="PKCS#8">PKCS#8</option>
         </select>
       </div>
-      <div class="config-item inline password-item">
-        <label>私钥密码</label>
-        <input 
-          type="text" 
-          v-model="password" 
-          class="modern-input" 
-          placeholder="可以为空"
-        />
-      </div>
       <button class="generate-btn" @click="generateKeyPair">
         生成
       </button>
@@ -34,15 +24,23 @@
 
     <!-- 密钥结果区域 -->
     <div v-if="keyPair.publicKey || keyPair.privateKey" class="keys-result">
-      <div class="key-section">
+      <div class="key-section public-key-section">
         <div class="key-header">
           <span class="key-label">RSA加密公钥</span>
-          <button class="copy-btn" @click="copyToClipboard(keyPair.publicKey)">
-            <svg viewBox="0 0 24 24" width="14" height="14">
-              <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-            </svg>
-            复制公钥
-          </button>
+          <div class="key-actions">
+            <button class="copy-btn" @click="copyToClipboard(keyPair.publicKey)">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+              复制公钥
+            </button>
+            <button class="copy-btn" @click="copySingleLine">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+              复制单行公钥
+            </button>
+          </div>
         </div>
         <div class="key-section-inner">
           <pre class="key-content">{{ keyPair.publicKey }}</pre>
@@ -52,12 +50,20 @@
       <div class="key-section">
         <div class="key-header">
           <span class="key-label">RSA加密私钥</span>
-          <button class="copy-btn" @click="copyToClipboard(keyPair.privateKey)">
-            <svg viewBox="0 0 24 24" width="14" height="14">
-              <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-            </svg>
-            复制私钥
-          </button>
+          <div class="key-actions">
+            <button class="copy-btn" @click="copyToClipboard(keyPair.privateKey)">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+              复制私钥
+            </button>
+            <button class="copy-btn" @click="copyPrivateKeySingleLine">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+              复制单行私钥
+            </button>
+          </div>
         </div>
         <div class="key-section-inner">
           <pre class="key-content">{{ keyPair.privateKey }}</pre>
@@ -83,7 +89,6 @@ export default {
     return {
       keySize: 2048,
       keyFormat: 'PKCS#1',
-      password: '',
       keyPair: {
         publicKey: '',
         privateKey: ''
@@ -97,37 +102,72 @@ export default {
   },
   methods: {
     showMessage(text, type = 'success') {
+      // 清除上一次的定时器，避免旧提示提前关闭新提示
+      if (this.messageTimer) {
+        clearTimeout(this.messageTimer)
+      }
       this.message = { show: true, text, type }
-      setTimeout(() => {
+      this.messageTimer = setTimeout(() => {
         this.message.show = false
       }, 3000)
+    },
+    async copySingleLine() {
+      if (!this.keyPair.publicKey) {
+        this.showMessage('没有内容可复制', 'error')
+        return
+      }
+      // 去掉 -----BEGIN/END----- 首尾行和所有换行
+      const singleLine = this.keyPair.publicKey
+        .replace(/-----[A-Z ]*PUBLIC KEY-----/g, '')
+        .replace(/\s+/g, '')
+      await this.copyToClipboard(singleLine)
+    },
+    async copyPrivateKeySingleLine() {
+      if (!this.keyPair.privateKey) {
+        this.showMessage('没有内容可复制', 'error')
+        return
+      }
+      // 去掉 -----BEGIN/END----- 首尾行和所有换行
+      const singleLine = this.keyPair.privateKey
+        .replace(/-----[A-Z ]*PRIVATE KEY-----/g, '')
+        .replace(/\s+/g, '')
+      await this.copyToClipboard(singleLine)
     },
     async copyToClipboard(text) {
       if (!text) {
         this.showMessage('没有内容可复制', 'error')
         return
       }
+      let ok = false
+      // WebView2 中 clipboard API 可能挂起，加超时兜底
       try {
-        await navigator.clipboard.writeText(text)
-        this.showMessage('复制成功')
+        await Promise.race([
+          navigator.clipboard.writeText(text),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
+        ])
+        ok = true
       } catch (err) {
-        const textarea = document.createElement('textarea')
-        textarea.value = text
-        textarea.style.position = 'fixed'
-        textarea.style.opacity = '0'
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-        this.showMessage('复制成功')
+        // 降级：用隐藏 textarea 复制
+        try {
+          const textarea = document.createElement('textarea')
+          textarea.value = text
+          textarea.style.position = 'fixed'
+          textarea.style.opacity = '0'
+          document.body.appendChild(textarea)
+          textarea.select()
+          ok = document.execCommand('copy')
+          document.body.removeChild(textarea)
+        } catch (e) {
+          ok = false
+        }
       }
+      this.showMessage(ok ? '复制成功' : '复制失败', ok ? 'success' : 'error')
     },
     async generateKeyPair() {
       try {
         const result = await window.go.handler.RsaHandler.GenerateKeyPair(
           this.keySize,
-          this.keyFormat,
-          this.password
+          this.keyFormat
         )
         if (result.success) {
           this.keyPair.publicKey = result.publicKey
@@ -145,7 +185,6 @@ export default {
 
 <style scoped>
 .rsa-tool-container {
-  max-width: 900px;
   margin: 0 auto;
   padding: 24px;
   /* 隐藏滚动条 */
@@ -166,7 +205,7 @@ export default {
   flex-shrink: 0;
   background: #f5f7fa;
   border-radius: 12px;
-  padding: 20px;
+  padding: 10px 16px;
 }
 
 .config-item {
@@ -190,9 +229,9 @@ export default {
 }
 
 .modern-select {
-  padding: 8px 12px;
+  padding: 5px 10px;
   border: 1px solid #dadce0;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 13px;
   color: #3c4043;
   background: white;
@@ -230,17 +269,12 @@ export default {
   color: #9aa0a6;
 }
 
-.password-item {
-  flex: 1;
-  min-width: 180px;
-}
-
 .generate-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 20px;
+  padding: 6px 18px;
   margin-left: 12px;
   background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
   color: white;
@@ -262,7 +296,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 550px;
+  height: 580px;
   /* 隐藏滚动条 */
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -281,6 +315,15 @@ export default {
   border-radius: 12px;
   padding: 16px;
   overflow: hidden;
+}
+
+/* 公钥较短，占较小高度；私钥较长，占较大高度 */
+.public-key-section {
+  flex: 1.5;
+}
+
+.key-section:not(.public-key-section) {
+  flex: 2;
 }
 
 .key-section-inner {
@@ -317,6 +360,11 @@ export default {
   align-items: center;
   margin-bottom: 10px;
   flex-shrink: 0;
+}
+
+.key-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .key-label {
@@ -374,13 +422,17 @@ export default {
   margin-right: 4px;
 }
 
-.fade-enter-active, .fade-leave-active {
-  transition: all 0.3s ease;
+.fade-enter-active {
+  transition: all 0.4s ease;
+}
+
+.fade-leave-active {
+  transition: all 0.6s ease;
 }
 
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-20px);
+  transform: translateX(-50%) translateY(-12px);
 }
 
 @keyframes slideDown {

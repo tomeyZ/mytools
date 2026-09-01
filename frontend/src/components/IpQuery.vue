@@ -121,7 +121,6 @@ export default {
 <style scoped>
 .ip-query-container {
   padding: 24px;
-  max-width: 800px;
   margin: 0 auto;
   font-family: "思源宋体", "Noto Serif SC", serif;
 }

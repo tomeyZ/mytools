@@ -2,8 +2,10 @@
   <div class="app-container">
     <Sidebar @tool-change="handleToolChange"/>
     <div class="main-content">
-      <!-- 使用动态组件根据activeTool显示对应组件 -->
-      <component :is="currentComponent" />
+      <!-- 使用动态组件根据activeTool显示对应组件，KeepAlive缓存组件状态，切换菜单后数据不丢失 -->
+      <KeepAlive>
+        <component :is="currentComponent" />
+      </KeepAlive>
     </div>
   </div>
 </template>
@@ -16,9 +18,10 @@ import JsonFormat from "../components/JsonFormat.vue";
 import IpQuery from "../components/IpQuery.vue";
 import AesTool from "../components/AesTool.vue";
 import RsaTool from "../components/RsaTool.vue";
+import TextTool from "../components/TextTool.vue";
 
 export default {
-  components: {Sidebar, TimeTool, Md5Tool, JsonFormat, IpQuery, AesTool, RsaTool},
+  components: {Sidebar, TimeTool, Md5Tool, JsonFormat, IpQuery, AesTool, RsaTool, TextTool},
   data() {
     return {
       // 映射工具ID到组件
@@ -29,6 +32,7 @@ export default {
         'ip': IpQuery,
         'aes': AesTool,
         'rsa': RsaTool,
+        'text': TextTool,
       },
       activeTool: 'time'
     }

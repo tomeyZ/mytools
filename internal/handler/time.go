@@ -1,6 +1,9 @@
 package handler
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type TimeHandler struct {
 }
@@ -9,26 +12,31 @@ func NewTimeHandler() *TimeHandler {
 	return &TimeHandler{}
 }
 
-// TimestampToDate 时间戳转日期
+// TimestampToDate 时间戳转日期（支持秒/毫秒，自动判别）
 func (a *TimeHandler) TimestampToDate(timestamp int64, timezone string) string {
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
 		return "无效时区"
 	}
-	return time.Unix(timestamp, 0).In(loc).Format(time.DateTime)
+	// 13位及以上按毫秒处理，10位按秒
+	sec := timestamp
+	if timestamp > 1e12 || timestamp < -1e12 {
+		sec = timestamp / 1000
+	}
+	return time.Unix(sec, 0).In(loc).Format(time.DateTime)
 }
 
-// DateToTimestamp 日期转时间戳
-func (a *TimeHandler) DateToTimestamp(dateStr, timezone string) int64 {
+// DateToTimestamp 日期转时间戳，失败返回错误信息
+func (a *TimeHandler) DateToTimestamp(dateStr, timezone string) string {
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
-		return -1
+		return "无效时区"
 	}
 	t, err := time.ParseInLocation(time.DateTime, dateStr, loc)
 	if err != nil {
-		return -1
+		return "格式错误，应为 YYYY-MM-DD HH:mm:ss"
 	}
-	return t.Unix()
+	return fmt.Sprintf("%d", t.Unix())
 }
 
 // GetCurrentTime 获取当前时间

@@ -15,7 +15,7 @@ func NewRsaHandler() *RsaHandler {
 }
 
 // RSAKeyPair RSA密钥对响应
- type RSAKeyPair struct {
+type RSAKeyPair struct {
 	Success   bool   `json:"success"`
 	PublicKey string `json:"publicKey"`
 	PrivateKey string `json:"privateKey"`
@@ -23,7 +23,7 @@ func NewRsaHandler() *RsaHandler {
 }
 
 // GenerateKeyPair 生成RSA密钥对
- func (h *RsaHandler) GenerateKeyPair(keySize int, keyFormat, password string) RSAKeyPair {
+func (h *RsaHandler) GenerateKeyPair(keySize int, keyFormat string) RSAKeyPair {
 	// 生成RSA密钥对
 	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {

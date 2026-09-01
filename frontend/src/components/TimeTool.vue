@@ -94,6 +94,11 @@
           </div>
           <div class="result-area" v-if="dateResult">
             <div class="result-value">{{ dateResult }}</div>
+            <button class="copy-btn" v-if="!dateResult.startsWith('无效')" title="复制" @click="copyResult(dateResult)">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
           </div>
           <div class="result-placeholder" v-else>
             <span>输入时间戳后点击转换</span>
@@ -130,6 +135,11 @@
           </div>
           <div class="result-area" v-if="timestampResult">
             <div class="result-value mono">{{ timestampResult }}</div>
+            <button class="copy-btn" v-if="!timestampResult.startsWith('格式错误') && !timestampResult.startsWith('无效')" title="复制" @click="copyResult(timestampResult)">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
           </div>
           <div class="result-placeholder" v-else>
             <span>输入日期后点击转换</span>
@@ -177,6 +187,11 @@
           </button>
           <div class="result-area compact" v-if="dateCalcResult">
             <div class="result-value">{{ dateCalcResult }}</div>
+            <button class="copy-btn" v-if="!dateCalcResult.startsWith('日期格式错误')" title="复制" @click="copyResult(dateCalcResult)">
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
           </div>
           <div class="result-placeholder compact" v-else>
             <span>输入日期和天数后计算</span>
@@ -184,6 +199,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 复制提示 -->
+    <transition name="toast-fade">
+      <div v-if="toast.show" :class="['message-toast', toast.type]">
+        <svg class="icon" viewBox="0 0 1024 1024" width="16" height="16">
+          <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 0 1-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z" fill="#fff"/>
+        </svg>
+        {{ toast.text }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -212,7 +237,9 @@ export default {
       daysOffset: "",
       dateCalcResult: "",
       timer: null,
-      isPaused: false
+      isPaused: false,
+      toast: { show: false, text: '', type: 'success' },
+      toastTimer: null
     }
   },
   mounted() {
@@ -268,20 +295,71 @@ export default {
         this.dateResult = "";
         return;
       }
-      this.dateResult = await window.go.handler.TimeHandler.TimestampToDate(
-          parseInt(this.timestampInput),
-          this.timezone
-      );
+      const ts = parseInt(this.timestampInput.trim());
+      if (isNaN(ts)) {
+        this.dateResult = "无效的时间戳";
+        return;
+      }
+      this.dateResult = await window.go.handler.TimeHandler.TimestampToDate(ts, this.timezone);
     },
     async convertToTimestamp() {
       if (!this.dateInput) {
         this.timestampResult = "";
         return;
       }
+      // 归一化：/ 转 -，不补零的时间补零，只填日期时补 00:00:00
+      const normalized = this.normalizeDate(this.dateInput.trim());
+      if (!normalized) {
+        this.timestampResult = "格式错误，应为 YYYY-MM-DD HH:mm:ss";
+        return;
+      }
       this.timestampResult = await window.go.handler.TimeHandler.DateToTimestamp(
-          this.dateInput,
+          normalized,
           this.timezone
       );
+    },
+    // 日期输入归一化：支持 YYYY-MM-DD、YYYY/MM/DD、不补零、带或不带时分秒
+    normalizeDate(input) {
+      const str = input.replace(/\//g, '-').trim();
+      // 无时间部分，补 00:00:00
+      const dateOnly = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (dateOnly) {
+        return `${dateOnly[1]}-${dateOnly[2].padStart(2, '0')}-${dateOnly[3].padStart(2, '0')} 00:00:00`;
+      }
+      // 带时间
+      const full = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+      if (full) {
+        return `${full[1]}-${full[2].padStart(2, '0')}-${full[3].padStart(2, '0')} ${full[4].padStart(2, '0')}:${full[5].padStart(2, '0')}:${(full[6] || '0').padStart(2, '0')}`;
+      }
+      return null;
+    },
+    async copyResult(text) {
+      if (!text || text.startsWith('格式错误') || text.startsWith('无效')) {
+        return;
+      }
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      } catch (e) {
+        // 降级
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      this.showToast(ok ? '已复制' : '复制失败');
+    },
+    showToast(text) {
+      if (this.toastTimer) {
+        clearTimeout(this.toastTimer);
+      }
+      this.toast = { show: true, text, type: 'success' };
+      this.toastTimer = setTimeout(() => {
+        this.toast.show = false;
+      }, 3000);
     },
     clearResultIfEmpty(type) {
       if (type === 'timestamp' && !this.timestampInput.trim()) {
@@ -326,7 +404,6 @@ export default {
 
 <style scoped>
 .time-converter-container {
-  max-width: 900px;
   margin: 0 auto;
   padding: 24px;
   height: 100%;
@@ -702,6 +779,72 @@ export default {
   border-radius: 8px;
   padding: 12px;
   border-left: 4px solid #3498db;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #7a8699;
+  cursor: pointer;
+  transition: color 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.copy-btn:hover {
+  color: #3498db;
+}
+
+/* 复制提示 toast（与 RSA 页同款） */
+.message-toast {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: white;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.message-toast.success {
+  background: #4CAF50;
+}
+
+.message-toast.error {
+  background: #f44336;
+}
+
+.icon {
+  margin-right: 4px;
+}
+
+.toast-fade-enter-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.toast-fade-leave-active {
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.toast-fade-enter,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
 }
 
 .result-label {
@@ -715,7 +858,7 @@ export default {
 }
 
 .result-value {
-  font-size: 14px;
+  font-size: 17px;
   color: #333;
   font-weight: 600;
   word-break: break-all;

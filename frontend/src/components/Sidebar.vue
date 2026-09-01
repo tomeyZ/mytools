@@ -10,7 +10,8 @@
             :class="{ active: activeItem === item.id }"
             @click="switchTool(item.id)"
         >
-          {{ item.name }}
+          <span class="menu-icon">{{ item.icon }}</span>
+          <span class="menu-name">{{ item.name }}</span>
         </li>
       </ul>
     </div>
@@ -27,12 +28,13 @@ export default {
   data() {
     return {
       menuItems: [
-        { id: 'time', name: '🕒 时区转换' },
-        { id: 'md5', name: '🔐 MD5加密' },
-        { id: 'json', name: '{.} JSON美化' },
-        { id: 'ip', name: '🌐 IP地址查询' },
-        { id: 'aes', name: '🔐 AES加解密' },
-        { id: 'rsa', name: '🔑 RSA加解密' }
+        { id: 'time', icon: '🕒', name: '时区转换' },
+        { id: 'md5', icon: '🔐', name: 'MD5加密' },
+        { id: 'json', icon: '{.}', name: 'JSON美化' },
+        { id: 'ip', icon: '🌐', name: 'IP地址查询' },
+        { id: 'aes', icon: '🔐', name: 'AES加解密' },
+        { id: 'rsa', icon: '🔑', name: 'RSA加解密' },
+        { id: 'text', icon: '📝', name: '文本处理' }
       ],
       activeItem: 'time',
       currentVersion: ''
@@ -98,6 +100,20 @@ export default {
   align-items: center;
 }
 
+/* 图标固定宽度：emoji 渲染宽度不一，占位统一后文字起点对齐 */
+.menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.menu-name {
+  margin-left: 8px;
+}
+
 .menu-list li:hover {
   background: #e9ecef;
   color: #333;
@@ -109,9 +125,7 @@ export default {
 }
 
 .sidebar-footer {
-  padding: 10px 15px 15px 15px;
-  background: #fff;
-  border-top: 1px solid #eee;
+  padding: 12px 15px;
   text-align: center;
   flex-shrink: 0;
 }
