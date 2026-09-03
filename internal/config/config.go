@@ -1,15 +1,11 @@
 package config
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
 )
-
-//go:embed wails.json
-var embeddedConfig embed.FS
 
 type AuthorConfig struct {
 	Name  string `json:"name"`
@@ -29,14 +25,17 @@ var (
 	initErr  error
 )
 
-func LoadConfig() (*AppConfig, error) {
-	var config AppConfig
+// 配置源是根目录的 wails.json：main.go 里 //go:embed 嵌入后传入字节。
+// 不在本包再放一份副本——go:embed 只能嵌包内文件，副本会导致版本号双写漂移
+func Init(configData []byte) error {
+	once.Do(func() {
+		instance, initErr = loadConfig(configData)
+	})
+	return initErr
+}
 
-	// 从嵌入的文件系统中读取 wails.json
-	configData, err := embeddedConfig.ReadFile("wails.json")
-	if err != nil {
-		return nil, fmt.Errorf("读取内嵌配置文件失败：%v", err)
-	}
+func loadConfig(configData []byte) (*AppConfig, error) {
+	var config AppConfig
 
 	// 解析配置
 	if err := json.Unmarshal(configData, &config); err != nil {
@@ -44,13 +43,6 @@ func LoadConfig() (*AppConfig, error) {
 	}
 	log.Println("配置加载成功！")
 	return &config, nil
-}
-
-func Init() error {
-	once.Do(func() {
-		instance, initErr = LoadConfig()
-	})
-	return initErr
 }
 
 func Get() *AppConfig {

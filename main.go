@@ -14,9 +14,12 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed wails.json
+var wailsConfig []byte
+
 func main() {
-	// 初始化配置
-	if err := config.Init(); err != nil {
+	// 初始化配置（配置源：根目录 wails.json，编译期嵌入，运行时无副本）
+	if err := config.Init(wailsConfig); err != nil {
 		log.Fatal("配置初始化失败: ", err)
 	}
 	cfg := config.Get()
