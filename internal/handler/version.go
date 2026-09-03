@@ -85,7 +85,7 @@ func (a *VersionHandler) Download() ([]byte, error) {
 		return nil, err
 	}
 
-	downloadUrl := cfg.BaseUrl + "/downloads/" + versionInfo.Version + "/MyTools_v" + versionInfo.Version + extension
+	downloadUrl := cfg.BaseUrl + "/downloads/" + versionInfo.Version + "/开发工具_v" + versionInfo.Version + extension
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
 		return nil, err

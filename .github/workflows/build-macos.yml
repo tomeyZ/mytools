@@ -38,16 +38,18 @@ jobs:
 
       - name: Package DMG
         run: |
-          APP="build/bin/MyTools.app"
-          if [ ! -d "$APP" ]; then
-            echo "MyTools.app not found, listing build/bin:"
+          APP=$(ls -d build/bin/*.app | head -n 1)
+          if [ -z "$APP" ]; then
+            echo "No .app found, listing build/bin:"
             ls -la build/bin/
             exit 1
           fi
-          hdiutil create -volname "MyTools" \
+          APP_NAME=$(basename "$APP" .app)
+          echo "Found app: $APP"
+          hdiutil create -volname "$APP_NAME" \
             -srcfolder "$APP" \
             -ov -format UDZO \
-            "build/bin/MyTools_darwin_universal.dmg"
+            "build/bin/${APP_NAME}_darwin_universal.dmg"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v5
