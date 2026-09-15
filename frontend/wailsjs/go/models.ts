@@ -75,11 +75,11 @@ export namespace handler {
 	    }
 	}
 	export class VersionInfo {
-	    id: number;
 	    version: string;
 	    change_log: string[];
-	    create_time: number;
 	    create_date: string;
+	    download_url: string;
+	    release_url: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new VersionInfo(source);
@@ -87,12 +87,46 @@ export namespace handler {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
 	        this.version = source["version"];
 	        this.change_log = source["change_log"];
-	        this.create_time = source["create_time"];
 	        this.create_date = source["create_date"];
+	        this.download_url = source["download_url"];
+	        this.release_url = source["release_url"];
 	    }
+	}
+	export class UpdateResult {
+	    status: string;
+	    message: string;
+	    latest?: VersionInfo;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.message = source["message"];
+	        this.latest = this.convertValues(source["latest"], VersionInfo);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }

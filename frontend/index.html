@@ -4,6 +4,17 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>mytools</title>
+    <script>
+      // 首屏防闪：应用挂载前先把主题打到 <html> 上，
+      // 否则深色用户每次启动都会先白一下再变黑
+      // 必须是已支持的取值：残留的旧主题值要归一到浅色
+      try {
+        var t = localStorage.getItem('mytools:theme');
+        document.documentElement.setAttribute('data-theme', (t === 'dark') ? 'dark' : 'light');
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    </script>
 </head>
 <body>
 <div id="app"></div>

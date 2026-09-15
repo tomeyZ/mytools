@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>「检查更新」入口放哪里</title>
+<!-- 直接引入真实令牌与全局组件类，几何即真实值 -->
+<link rel="stylesheet" href="../frontend/src/style.css">
+<style>
+  /* 顶栏 / 侧栏的样式在 MainLayout.vue、Sidebar.vue 的 <style scoped> 里，
+     mock 里照抄一份，保证与真实渲染一致 */
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    height: 48px; padding: 0 16px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .icon-btn {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 28px; height: 28px;
+    border: 1px solid var(--border); border-radius: var(--radius-xs);
+    background: transparent; color: var(--text-3); cursor: pointer;
+  }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    width: 232px; height: 30px; padding: 0 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .search-txt { flex: 1; min-width: 0; font-size: 12.5px; color: var(--text-3); }
+  .search-kbd {
+    flex-shrink: 0; padding: 1px 5px;
+    border: 1px solid var(--border); border-radius: 4px;
+    font-family: var(--font-sans); font-size: 10.5px; color: var(--text-3);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+  .version {
+    font-size: 12px; color: var(--text-3); font-family: var(--font-mono);
+  }
+  .theme-seg {
+    display: flex; align-items: center; gap: 2px; padding: 2px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: calc(var(--radius-sm) + 2px);
+  }
+  .seg-btn {
+    display: flex; align-items: center; gap: 5px;
+    height: 24px; padding: 0 10px;
+    border: none; border-radius: var(--radius-xs); background: transparent;
+    color: var(--text-3); font-family: inherit; font-size: 12px; line-height: 1;
+    cursor: pointer;
+  }
+  .seg-btn.on { background: var(--surface); color: var(--accent-strong); font-weight: 600; }
+
+  /* ---- 侧栏 ---- */
+  .sidebar { display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--border); }
+  .sidebar-nav { flex: 1; padding: 12px 10px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--radius-sm);
+    color: var(--text-2); font-size: 13.5px; line-height: 1.2; white-space: nowrap;
+  }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
+  .nav-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 18px; height: 18px; }
+  .ph { width: 12px; height: 12px; border-radius: 3px; background: var(--border-strong, var(--border)); opacity: .75; }
+  .nav-group-title { padding: 14px 10px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; color: var(--text-3); }
+
+  /* ============ 本次要评审的三种入口形态 ============ */
+  /* A1 低调型：常态纯文字，hover 才显形 */
+  .ver-a1 {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 28px; padding: 0 8px;
+    border: 1px solid transparent; border-radius: var(--radius-xs);
+    background: transparent; color: var(--text-3);
+    font-family: var(--font-mono); font-size: 12px; cursor: pointer;
+  }
+  .ver-a1.hover { color: var(--accent-strong); border-color: var(--border); background: var(--surface-2); }
+
+  /* A2 明确型：常态就是小胶囊 */
+  .ver-a2 {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 28px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: var(--radius-xs);
+    background: var(--surface-2); color: var(--text-2);
+    font-family: var(--font-mono); font-size: 12px; cursor: pointer;
+  }
+  .ver-a2.hover { color: var(--accent-strong); border-color: var(--accent); background: var(--surface); }
+
+  /* 有新版本时挂在版本号上的红点 */
+  .ver-wrap { position: relative; display: inline-flex; }
+  .dot {
+    position: absolute; top: -2px; right: -2px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--danger, #e5484d);
+    box-shadow: 0 0 0 2px var(--surface);
+  }
+
+  /* C 独立图标按钮 */
+  .upd-icon-btn {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 28px; height: 28px;
+    border: 1px solid var(--border); border-radius: var(--radius-xs);
+    background: transparent; color: var(--text-3); cursor: pointer;
+  }
+
+  /* B 侧栏底部条目 */
+  .side-foot { padding: 10px; border-top: 1px solid var(--border); }
+  .foot-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--radius-sm);
+    color: var(--text-3); font-size: 12.5px; white-space: nowrap; cursor: pointer;
+  }
+  .foot-item.hover { background: var(--surface-3); color: var(--text); }
+  .foot-ver { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
+
+  /* 检查中的小圈 */
+  .spin {
+    width: 13px; height: 13px; flex-shrink: 0;
+    border: 2px solid var(--accent-soft);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- 页面外壳 ---- */
+  body { margin: 0; padding: 22px 26px 60px; background: var(--bg); }
+  .scene { margin-bottom: 38px; }
+  .scene:last-child { margin-bottom: 0; }
+  .scene > h2 { margin: 0 0 3px; font-size: 13.5px; font-weight: 650; color: var(--text); }
+  .scene > h2 .rec {
+    display: inline-block; margin-left: 7px; padding: 2px 7px; vertical-align: 1px;
+    border-radius: 10px; background: var(--accent-soft); color: var(--accent-strong);
+    font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+  }
+  .scene > .note { margin: 0 0 14px; font-size: 11.5px; color: var(--text-3); line-height: 1.7; max-width: 900px; }
+  .scene > .note b { color: var(--text-2); font-weight: 600; }
+  .frame { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg); }
+  .h-note { margin: 8px 0 0; font-size: 11px; color: var(--text-3); line-height: 1.7; }
+  .h-note b { color: var(--text-2); }
+  .h-note .k, .scene > .note .k, .var-note .k { font-family: var(--font-mono); padding: 1px 4px; border-radius: 3px; background: var(--surface-2); color: var(--text-2); }
+
+  /* 变体对照行：左边小图按真实宽度画，右边文字 */
+  .var-row { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+  .var-row:last-child { margin-bottom: 0; }
+  .var-fig { flex: 0 0 auto; }
+  .var-cap { margin: 0 0 6px; font-size: 11.5px; font-weight: 600; color: var(--text-2); }
+  .var-cap span { font-weight: 400; color: var(--text-3); }
+  .var-note { flex: 1; min-width: 0; margin: 19px 0 0; font-size: 11.5px; color: var(--text-3); line-height: 1.75; }
+  .var-note b { color: var(--text-2); font-weight: 600; }
+
+  /* 复用真实 toast 观感 */
+  .toast-demo {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 14px 9px 11px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg); color: var(--text);
+    font-size: 13px; font-weight: 600;
+  }
+  .toast-demo .ic {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 15px; height: 15px; border-radius: 50%; background: var(--success, #2f9e6b); color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <h2>先看现状</h2>
+  <p class="note">
+    顶栏右侧现在是 <span class="k">[v1.1.3]</span> + <span class="k">[浅色|深色]</span> 两组，中间隔 12px。
+    <b>位置本身没问题</b> —— 主题是全局设置、版本是应用级信息，都属于「跟具体工具无关」的那一类，放最右端是 VS Code / Chrome 的通行做法，不用挪。
+    真正的问题是：<b>v1.1.3 现在长得跟装饰性文字一模一样</b>（12px、最浅的 --text-3、等宽字体、没有任何容器），
+    所以你会觉得"它在那儿，但好像没什么用"。加上检查更新之后，它正好被救活。
+  </p>
+  <div class="frame" style="width:808px">
+    <div class="topbar">
+      <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.4"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/></svg></button>
+      <div class="search">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+        <span class="search-txt">搜索工具…</span>
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </div>
+      <div class="topbar-right">
+        <span class="version">v1.1.3</span>
+        <div class="theme-seg">
+          <button class="seg-btn on"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>浅色</button>
+          <button class="seg-btn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.5 6.5 0 0 0 9.7 9.7z"/></svg>深色</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 位置 A ================= -->
+<div class="scene">
+  <h2>A · 版本号本身变成入口<span class="rec">推荐</span></h2>
+  <p class="note">
+    把 <span class="k">v1.1.3</span> 从 <span class="k">&lt;span&gt;</span> 换成 <span class="k">&lt;button&gt;</span>，点它就查更新。
+    <b>不新增任何位置</b>，右区仍然只有两组。版本号是"更新"天然的锚点 —— 人看到版本号，第一反应就是"我是不是最新的"。
+    下面四个小图只画右区（真实右区约 190px 宽），因为差异只在这里。
+  </p>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">A1 低调型 <span>· 常态 = 现在这样</span></p>
+      <div class="frame" style="width:300px">
+        <div class="topbar" style="justify-content:flex-end">
+          <div class="topbar-right">
+            <button class="ver-a1">v1.1.3</button>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="var-note">外观与现状完全一致，不改任何视觉。<b>但静态下看不出可点</b>，只有鼠标划过才浮现描边 —— 用户很可能一直不知道它能点。内部工具，发现性比克制重要。</p>
+  </div>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">A2 明确型 <span>· 常态就是小胶囊</span></p>
+      <div class="frame" style="width:300px">
+        <div class="topbar" style="justify-content:flex-end">
+          <div class="topbar-right">
+            <button class="ver-a2">v1.1.3</button>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="var-note">跟左边搜索框同一种「浅底 + 细边」语言，<b>一眼看出是控件</b>。代价是右区多了一个有边界的方块，稍显热闹 —— 但只多 1px 描边，比 A1 的"隐形"划算。</p>
+  </div>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">A2 · hover 态</p>
+      <div class="frame" style="width:300px">
+        <div class="topbar" style="justify-content:flex-end">
+          <div class="topbar-right">
+            <button class="ver-a2 hover">v1.1.3</button>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="var-note">描边转 <span class="k">--accent</span>、底色转 <span class="k">--surface</span>，跟其他按钮的 hover 语言一致。</p>
+  </div>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">A2 · 检查中</p>
+      <div class="frame" style="width:300px">
+        <div class="topbar" style="justify-content:flex-end">
+          <div class="topbar-right">
+            <button class="ver-a2" style="color:var(--text-3)"><i class="spin"></i>检查中…</button>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="var-note">
+      图标位换成转圈、文字变「检查中…」，期间禁用点击防空转。
+      <b>注意这里：文字一变长，胶囊就会撑宽，把右边的主题切换整体往左推</b>。
+      建议给胶囊写死 <span class="k">min-width</span>（按"检查中…"的宽度算），让右侧不跳。
+    </p>
+  </div>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">A2 · 后台查到有新版本 <span>（可选增强）</span></p>
+      <div class="frame" style="width:300px">
+        <div class="topbar" style="justify-content:flex-end">
+          <div class="topbar-right">
+            <span class="ver-wrap">
+              <button class="ver-a2">v1.1.3</button>
+              <i class="dot"></i>
+            </span>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="var-note">
+      启动时静默查一次，有新版就在胶囊右上角点一个红点 —— <b>用户完全不用记得来点</b>，看到红点自然会点。
+      代价是每次启动多一次后台请求（异步、不阻塞界面）。要不要做可以后面单独定。
+    </p>
+  </div>
+</div>
+
+<!-- ================= 位置 B ================= -->
+<div class="scene">
+  <h2>B · 侧栏底部加一条</h2>
+  <p class="note">
+    放在导航下方、用 <span class="k">border-top</span> 隔开。位置独立、不挤顶栏，但有两个硬伤。
+  </p>
+  <div class="frame" style="width:1024px">
+    <div style="display:grid;grid-template-columns:216px 1fr;height:268px">
+      <div class="sidebar">
+        <div class="sidebar-nav">
+          <div class="nav-group-title">时间</div>
+          <div class="nav-item active"><span class="nav-icon"><i class="ph"></i></span>时区转换</div>
+          <div class="nav-group-title">编码加密</div>
+          <div class="nav-item"><span class="nav-icon"><i class="ph"></i></span>MD5加密</div>
+          <div class="nav-item"><span class="nav-icon"><i class="ph"></i></span>AES加解密</div>
+        </div>
+        <div class="side-foot">
+          <div class="foot-item hover">
+            <span class="nav-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></span>
+            <span>检查更新</span>
+            <span class="foot-ver">v1.1.3</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="topbar">
+          <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.4"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/></svg></button>
+          <div class="search">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+            <span class="search-txt">搜索工具…</span>
+            <kbd class="search-kbd">Ctrl K</kbd>
+          </div>
+          <div class="topbar-right">
+            <span class="version">v1.1.3</span>
+            <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="h-note">
+    ① <b>侧栏折叠后只有 68px</b>，文字必须隐藏，只剩一个孤零零的箭头图标 —— 用户不知道那是什么。
+    ② 侧栏现在<b>整列都是「工具菜单」</b>，插一条非工具的条目会破坏这个语义；而且底部条会被压在导航滚动区之外，窗口一矮就跟菜单抢高度。
+  </p>
+</div>
+
+<!-- ================= 位置 C ================= -->
+<div class="scene">
+  <h2>C · 顶栏另起一个图标按钮</h2>
+  <p class="note">
+    版本号保持纯文字，右边单独加一个 <span class="k">28×28</span> 的图标按钮。
+  </p>
+  <div class="frame" style="width:808px">
+    <div class="topbar">
+      <button class="icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.4"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/></svg></button>
+      <div class="search">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--text-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
+        <span class="search-txt">搜索工具…</span>
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </div>
+      <div class="topbar-right">
+        <span class="version">v1.1.3</span>
+        <button class="upd-icon-btn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></button>
+        <div class="theme-seg"><button class="seg-btn on">浅色</button><button class="seg-btn">深色</button></div>
+      </div>
+    </div>
+  </div>
+  <p class="h-note">
+    右区从 2 组变 3 组，且 <b>v1.1.3 和这个按钮语义重复</b> —— 按钮查的正是这个版本号有没有更新，拆成两个并列元素反而让人要想"它俩什么关系"。
+    顶栏右侧本来就不宽，再塞一个 28px 方块会显得拥。
+  </p>
+</div>
+
+<!-- ================= 反馈态 ================= -->
+<div class="scene">
+  <h2>选定 A 之后，点下去只剩两种反馈</h2>
+  <p class="note">都不用新组件：一个复用 <span class="k">toast.js</span>，一个复用已经写好但没接线的 <span class="k">UpdateDialog.vue</span>。</p>
+
+  <div class="var-row">
+    <div class="var-fig">
+      <p class="var-cap">① 已是最新</p>
+      <div style="padding:6px 0 10px">
+        <span class="toast-demo">
+          <span class="ic"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4.5 12.5 9.5 17.5 19.5 7"/></svg></span>
+          当前已是最新版本 v1.1.3
+        </span>
+      </div>
+    </div>
+    <p class="var-note">走现成的 <span class="k">showToast(msg, 'success')</span>，2.6 秒自动消失，跟其他页的复制提示同款。</p>
+  </div>
+
+  <div style="margin-top:6px">
+    <p class="var-cap">② 发现新版本 <span>· 沿用已有 UpdateDialog.vue 的骨架，但样式必须重做</span></p>
+    <div class="frame" style="width:520px;margin-top:8px">
+      <div style="padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px">
+        <span style="display:flex;width:16px;height:16px;color:var(--accent-strong)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg></span>
+        <b style="color:var(--text);font-size:14px">发现新版本</b>
+        <span style="margin-left:auto;color:var(--text-3);font-size:17px;line-height:1">&times;</span>
+      </div>
+      <div style="padding:16px 20px;background:var(--surface)">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+          <span style="font-family:var(--font-mono);font-weight:600;color:var(--accent-strong)">v1.1.4</span>
+          <span style="color:var(--text-3)">→</span>
+          <span style="font-family:var(--font-mono);color:var(--text-3)">当前 v1.1.3</span>
+        </div>
+        <ul style="margin:11px 0 0;padding-left:18px;font-size:12.5px;line-height:1.8;color:var(--text-2)">
+          <li>IP 查询改为多源并发，境外不通时自动走国内源</li>
+          <li>新增检查更新</li>
+        </ul>
+      </div>
+      <div style="padding:13px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn ghost">稍后提醒我</button>
+        <button class="btn primary">去下载</button>
+      </div>
+    </div>
+    <p class="h-note" style="max-width:900px">
+      现在这个组件的样式是<b>硬编码浅色</b>的（<span class="k">#fff</span> 底、<span class="k">#333</span> 字、绿色渐变头），切到深色主题会白得刺眼；
+      上面这个换成项目令牌后的样子。另外它「立即更新」指向 <span class="k">your-download-url.com</span> 占位符、
+      <span class="k">hasUpdate</span> 写死 <span class="k">true</span>、而且<b>没有任何地方 import 它</b>，等于一个没接线的半成品。
+    </p>
+  </div>
+</div>
+
+<script>
+  // ?theme=dark 用来看深色下的对比度
+  const t = new URLSearchParams(location.search).get('theme');
+  if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+
+  // ?probe=1 把实测宽度写进 title，供 --dump-dom 抓取（静态页，load 即可）
+  if (new URLSearchParams(location.search).get('probe')) {
+    addEventListener('load', () => {
+      const rows = [];
+      document.querySelectorAll('.var-fig').forEach((fig, i) => {
+        const btn = fig.querySelector('.ver-a1, .ver-a2');
+        const right = fig.querySelector('.topbar-right');
+        const cap = fig.querySelector('.var-cap');
+        rows.push([
+          'c' + i + '[' + (cap ? cap.textContent.trim().replace(/\s+/g, ' ').slice(0, 14) : '') + ']',
+          'btn=' + (btn ? Math.round(btn.getBoundingClientRect().width) : '-'),
+          'right=' + (right ? Math.round(right.getBoundingClientRect().width) : '-'),
+        ].join(' '));
+      });
+      const full = document.querySelectorAll('.topbar-right');
+      rows.push('fullTopbarRight=' + Math.round(full[0].getBoundingClientRect().width));
+      rows.push('bodyH=' + document.body.scrollHeight);
+      document.title = 'PROBE| ' + rows.join(' | ');
+    });
+  }
+</script>
+</body>
+</html>

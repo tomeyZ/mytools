@@ -36,7 +36,7 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: |
-          npm install
+          npm ci --include=dev
           chmod +x node_modules/.bin/*
 
       - name: Build macOS (universal)
@@ -90,7 +90,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm install
+        run: npm ci --include=dev
 
       # 不带 -s：这个 job 是独立环境，必须自己构建前端产物并生成 wails 绑定
       - name: Build Windows

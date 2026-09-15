@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -19,6 +21,15 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// OpenExternal 用系统默认浏览器打开外部链接（下载新版、Release 页面）。
+// 不用前端 window.open：WebView2 里会在应用窗口内打开，没有地址栏也没有下载能力
+func (a *App) OpenExternal(url string) {
+	if a.ctx == nil || url == "" {
+		return
+	}
+	runtime.BrowserOpenURL(a.ctx, url)
 }
 
 // Greet returns a greeting for the given name

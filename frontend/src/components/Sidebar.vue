@@ -1,137 +1,138 @@
 <template>
-  <div class="sidebar-container">
-    <!-- 顶部功能列表 -->
-    <div class="sidebar-header">
-      <h2 class="sidebar-title">功能列表</h2>
-      <ul class="menu-list">
-        <li
-            v-for="item in menuItems"
+  <aside class="sidebar" :class="{ collapsed }">
+    <nav class="sidebar-nav">
+      <template v-for="group in groups" :key="group.label">
+        <div class="nav-group-title">{{ group.label }}</div>
+        <!-- 折叠态下只剩图标，工具名靠 title 兜底 -->
+        <div
+            v-for="item in group.items"
             :key="item.id"
-            :class="{ active: activeItem === item.id }"
+            class="nav-item"
+            :class="{ active: item.id === activeId }"
+            :title="item.name"
             @click="switchTool(item.id)"
         >
-          <span class="menu-icon">{{ item.icon }}</span>
-          <span class="menu-name">{{ item.name }}</span>
-        </li>
-      </ul>
-    </div>
-
-    <!-- 底部版本信息 -->
-    <div class="sidebar-footer">
-      <p class="version-info">版本：{{ currentVersion }}</p>
-    </div>
-
-  </div>
+          <span class="nav-icon" v-html="item.icon"></span>
+          <span class="nav-label">{{ item.name }}</span>
+        </div>
+      </template>
+    </nav>
+  </aside>
 </template>
+
 <script>
+import { TOOL_GROUPS } from '../tools.js';
+
 export default {
+  name: 'Sidebar',
+  props: {
+    collapsed: { type: Boolean, default: false },
+    // 当前选中项由 MainLayout 持有（顶栏搜索也会改它），这里只做展示
+    activeId: { type: String, default: '' }
+  },
+  emits: ['tool-change'],
   data() {
     return {
-      menuItems: [
-        { id: 'time', icon: '🕒', name: '时区转换' },
-        { id: 'md5', icon: '🔐', name: 'MD5加密' },
-        { id: 'json', icon: '{.}', name: 'JSON美化' },
-        { id: 'ip', icon: '🌐', name: 'IP地址查询' },
-        { id: 'aes', icon: '🔐', name: 'AES加解密' },
-        { id: 'rsa', icon: '🔑', name: 'RSA加解密' },
-        { id: 'text', icon: '📝', name: '文本处理' }
-      ],
-      activeItem: 'time',
-      currentVersion: ''
-    }
-  },
-  mounted() {
-    this.loadVersion()
+      // 菜单结构统一由 tools.js 提供，顶栏搜索用的是同一份
+      groups: TOOL_GROUPS
+    };
   },
   methods: {
-    switchTool(itemId) {
-      this.activeItem = itemId
-      this.$emit('tool-change', itemId)
-    },
-    async loadVersion() {
-      try {
-        this.currentVersion = await window.go.handler.VersionHandler.GetCurrentVersion()
-      } catch (error) {
-        console.error('获取版本号失败:', error)
-        this.currentVersion = '1.0.0'
-      }
+    switchTool(id) {
+      this.$emit('tool-change', id);
     }
   }
-}
+};
 </script>
 
 <style scoped>
-.sidebar-container {
-  width: 220px;
-  background: #f8f9fa;
-  height: 100vh;
+.sidebar {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: background var(--tr), border-color var(--tr);
 }
 
-.sidebar-header {
-  padding: 20px;
+.sidebar-nav {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px;
 }
 
-.sidebar-title {
-  font-size: 23px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 14px;
-}
-
-.menu-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu-list li {
-  padding: 12px 16px;
-  color: #555;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+.nav-item {
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--tr), color var(--tr);
 }
 
-/* 图标固定宽度：emoji 渲染宽度不一，占位统一后文字起点对齐 */
-.menu-icon {
-  display: inline-flex;
+.nav-item:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.nav-icon {
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-group-title {
+  padding: 14px 10px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--text-3);
+  transition: color var(--tr);
+}
+
+/* ---- 折叠态 ---- */
+.collapsed .nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.collapsed .nav-label {
+  display: none;
+}
+
+/* 分组标题在折叠态退化成一条分隔线，保留分组语义又不占地方 */
+.collapsed .nav-group-title {
+  font-size: 0;
+  line-height: 0;
+  padding: 8px 0;
+}
+
+.collapsed .nav-group-title::after {
+  content: '';
+  display: block;
   width: 22px;
-  flex-shrink: 0;
-  font-size: 15px;
-}
-
-.menu-name {
-  margin-left: 8px;
-}
-
-.menu-list li:hover {
-  background: #e9ecef;
-  color: #333;
-}
-
-.menu-list li.active {
-  background: #42b983;
-  color: #fff;
-}
-
-.sidebar-footer {
-  padding: 12px 15px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.version-info {
-  font-size: 14px;
-  color: #999;
+  height: 1px;
+  margin: 0 auto;
+  background: var(--border);
 }
 </style>

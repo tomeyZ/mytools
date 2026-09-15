@@ -1,28 +1,28 @@
 <template>
-  <div class="json-editor-container">
+  <div class="page fill">
     <!-- 工具条 -->
     <div class="toolbar">
-      <button class="tool-btn" @click="formatJson">
+      <button class="btn ghost sm" @click="formatJson">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
         格式化
       </button>
-      <button class="tool-btn" @click="compactJson">
+      <button class="btn ghost sm" @click="compactJson">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         压缩
       </button>
-      <button class="tool-btn" @click="sortJson">
+      <button class="btn ghost sm" @click="sortJson">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="M11 4h10"/><path d="M11 8h7"/><path d="M11 12h4"/></svg>
         排序
       </button>
-      <button class="tool-btn" @click="unescapeAndFormat">
+      <button class="btn ghost sm" @click="unescapeAndFormat">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>
         去转义
       </button>
-      <button class="tool-btn" @click="escapeJson">
+      <button class="btn ghost sm" @click="escapeJson">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
         转义
       </button>
-      <button class="tool-btn" @click="unicodeToChinese">
+      <button class="btn ghost sm" @click="unicodeToChinese">
         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
         Unicode转中文
       </button>
@@ -30,8 +30,8 @@
 
     <div ref="jsoneditor" class="jsoneditor"></div>
 
-    <div v-if="error" class="error-message">
-      {{ error }}
+    <div v-if="error" class="error-bar">
+      <div class="out out-error"><span class="val">{{ error }}</span></div>
     </div>
   </div>
 </template>
@@ -350,60 +350,34 @@ export default {
 </script>
 
 <style scoped>
-.json-editor-container {
-  padding: 20px;
-  height: calc(100vh - 60px);
+/* 编辑器页面撑满内容区：外层 .content 有确定高度，用 100% 而不是 calc(100vh - N)，
+   这样以后改顶栏高度也不会溢出 */
+.fill {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-/* 工具条：与 RSA 页配置行一致的卡片风格 */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
   flex-shrink: 0;
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 10px 16px;
+  margin-bottom: 12px;
 }
 
-.tool-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  background: white;
-  border: 1px solid #dadce0;
-  border-radius: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #3c4043;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-/* 内联 SVG 图标：currentColor 跟随文字颜色（hover 蓝 / 激活白），不引入外部图标库 */
-.tool-btn .btn-icon {
+/* 内联 SVG 图标：currentColor 跟随文字颜色，不引入外部图标库 */
+.btn-icon {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
 }
 
-.tool-btn:hover {
-  border-color: #1a73e8;
-  color: #1a73e8;
-}
-
-.error-message {
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #ffebee;
-  color: #f44336;
-  border-radius: 4px;
-  font-family: monospace;
+.error-bar {
+  flex-shrink: 0;
+  margin-top: 12px;
 }
 
 .jsoneditor {
@@ -418,17 +392,67 @@ export default {
 </style>
 
 <style>
-/* JSONEditor 自定义样式 */
-/* 覆盖源码自带的亮蓝边框（.jsoneditor { border: thin solid #3883fa }），统一成淡灰 */
-/* 注意：不要在这里写 overflow——scoped 块的 .jsoneditor[data-v-xxx] 优先级 (0,2,0)
-   高于本文件的 div.jsoneditor (0,1,1)，写了也不会生效，反而误导。overflow 统一由 scoped 块控制 */
+/* JSONEditor 自定义样式
+   覆盖源码自带的亮蓝边框（.jsoneditor { border: thin solid #3883fa }），统一成令牌色。
+   注意：不要在这里写 overflow——scoped 块的 .jsoneditor[data-v-xxx] 优先级 (0,2,0)
+   高于本文件的 div.jsoneditor (0,1,1)，写了也不会生效，overflow 统一由 scoped 块控制。 */
 div.jsoneditor {
-  border: 1px solid #dadce0 !important;
-  border-radius: 4px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
 }
 
 .jsoneditor-contextmenu .jsoneditor-menu {
-  background-color: white !important;
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
   display: block !important;
 }
+
+/* ---------------------------------------------------------------------------
+   暗色主题下给 jsoneditor 内置的 ace 重新配色
+   ---------------------------------------------------------------------------
+   jsoneditor 自己打包了一份 ace，只内置 jsoneditor / textmate / textmate-css 三个
+   *浅色* 主题，外部 ace-builds 安装的主题注册不进它内部的 ace 实例，
+   所以深色没法靠 setTheme，只能在这里覆盖。
+   选择器统一带 :root[data-theme=dark]，特异性高于 ace 运行时插入的
+   .ace-jsoneditor xxx，不需要 !important。 */
+:root[data-theme=dark] div.jsoneditor {
+  color: var(--text) !important;
+}
+
+:root[data-theme=dark] .jsoneditor-frame,
+:root[data-theme=dark] .ace-jsoneditor.ace_editor,
+:root[data-theme=dark] .ace-jsoneditor .ace_scroller {
+  background-color: #12171f;
+}
+
+:root[data-theme=dark] .ace-jsoneditor .ace_gutter {
+  background: #12171f;
+  color: #6b7688;
+}
+
+:root[data-theme=dark] .ace-jsoneditor .ace_gutter-active-line {
+  background-color: rgba(255, 255, 255, .05);
+}
+
+:root[data-theme=dark] .ace-jsoneditor .ace_marker-layer .ace_active-line {
+  background: rgba(255, 255, 255, .04);
+}
+
+:root[data-theme=dark] .ace-jsoneditor .ace_print-margin,
+:root[data-theme=dark] .ace-jsoneditor .ace_indent-guide {
+  background: none;
+}
+
+/* JSON 的键走 ace_variable，浅色主题里是近黑色，深色下必须重设 */
+:root[data-theme=dark] .ace-jsoneditor .ace_text-layer { color: #e6eaf1; }
+:root[data-theme=dark] .ace-jsoneditor .ace_variable { color: #79c0ff; }
+:root[data-theme=dark] .ace-jsoneditor .ace_string { color: #7ee787; }
+:root[data-theme=dark] .ace-jsoneditor .ace_constant.ace_numeric { color: #ff7b72; }
+:root[data-theme=dark] .ace-jsoneditor .ace_constant.ace_language { color: #ffa657; }
+:root[data-theme=dark] .ace-jsoneditor .ace_cursor { border-left-color: #e6eaf1; }
+:root[data-theme=dark] .ace-jsoneditor .ace_marker-layer .ace_selection { background: rgba(56, 139, 253, .35); }
+:root[data-theme=dark] .ace-jsoneditor .ace_marker-layer .ace_bracket { border-color: #3b4757; }
+:root[data-theme=dark] .ace-jsoneditor .ace_invisible { color: #3b4757; }
+:root[data-theme=dark] .ace-jsoneditor .ace_fold { background-color: var(--accent); border-color: #0e1116; }
 </style>

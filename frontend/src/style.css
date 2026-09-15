@@ -1,37 +1,603 @@
+/* ============================================================================
+   设计令牌（Design Tokens）
+   ----------------------------------------------------------------------------
+   主题切换的做法：<html data-theme="light|dark">，只换变量值、不换结构。
+   所有组件样式里禁止再写死色值，一律用 var(--xxx)，否则换主题时会漏掉。
+
+   主题变量写在 :root 上，因此在 <style scoped> 里也能直接取到。
+   ============================================================================ */
+
+:root {
+  /* ---- 字体 ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Courier New", monospace;
+
+  /* ---- 圆角 / 阴影 / 过渡 ---- */
+  --radius: 12px;
+  --radius-sm: 9px;
+  --radius-xs: 6px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow: 0 4px 16px rgba(16, 24, 40, .08);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, .12);
+  --tr: .18s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   浅色（默认）—— 对应设计稿 A · Clarity
+   --------------------------------------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --surface-3: #eceef1;
+  --border: #e4e6eb;
+  --border-strong: #d3d7de;
+
+  --text: #171a21;
+  --text-2: #5b6371;
+  --text-3: #8c94a3;
+  /* 强调色块之上的文字色（按钮文字等），深色主题下会自动翻转 */
+  --on-accent: #ffffff;
+
+  --accent: #4f46e5;
+  --accent-strong: #4338ca;
+  --accent-soft: #eef0fe;
+  --accent-border: #dfe3fd;
+  --ring: rgba(79, 70, 229, .16);
+
+  --success: #12a150;
+  --success-soft: #e7f7ef;
+  --danger: #e5484d;
+  --danger-soft: #fdeceb;
+
+  /* 卡片图标的四种语义色调 */
+  --tint1-bg: #eef0fe; --tint1-fg: #4f46e5; --tint1-bd: #e0e3fd;
+  --tint2-bg: #e7f7ef; --tint2-fg: #12a150; --tint2-bd: #d2f0e1;
+  --tint3-bg: #fdf1e7; --tint3-fg: #c2680f; --tint3-bd: #f8e3d1;
+  --tint4-bg: #f4ecfd; --tint4-fg: #8b46d6; --tint4-bd: #e9dcfa;
+}
+
+/* ---------------------------------------------------------------------------
+   深色 —— 对应设计稿 B · Terminal
+   注意：数值型结果统一用 --font-mono，深色下对比度尤其重要
+   --------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --bg: #0e1116;
+  --surface: #151a22;
+  --surface-2: #1a2029;
+  --surface-3: #222a35;
+  --border: #242c37;
+  --border-strong: #313b49;
+
+  --text: #e6eaf1;
+  --text-2: #98a3b3;
+  --text-3: #6b7688;
+  --on-accent: #04191e;
+
+  --accent: #22d3ee;
+  --accent-strong: #67e8f9;
+  --accent-soft: rgba(34, 211, 238, .11);
+  --accent-border: rgba(34, 211, 238, .28);
+  --ring: rgba(34, 211, 238, .18);
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, .12);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, .14);
+
+  --tint1-bg: rgba(34, 211, 238, .10); --tint1-fg: #22d3ee; --tint1-bd: rgba(34, 211, 238, .22);
+  --tint2-bg: rgba(52, 211, 153, .10); --tint2-fg: #34d399; --tint2-bd: rgba(52, 211, 153, .22);
+  --tint3-bg: rgba(251, 191, 36, .10); --tint3-fg: #fbbf24; --tint3-bd: rgba(251, 191, 36, .22);
+  --tint4-bg: rgba(167, 139, 250, .12); --tint4-fg: #a78bfa; --tint4-bd: rgba(167, 139, 250, .24);
+
+  /* 深色下阴影几乎看不见，改用描边区分层级 */
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: none;
+}
+
+/* ============================================================================
+   基础样式
+   ============================================================================ */
 html {
-    background-color: #ffffff;
-    text-align: center;
-    color: white;
-    overflow: hidden;
-    height: 100%;
+  height: 100%;
+  background: var(--bg);
 }
 
 body {
-    margin: 0;
-    color: #333333;
-    font-family: "思源宋体", "Noto Serif SC", serif;
-    overflow: hidden;
-    height: 100%;
-    /*user-select: none;*/
-    /*-webkit-user-select: none;*/
-}
-
-/* 允许输入框和文本域的文字选择和复制 */
-/*input, textarea {*/
-/*    user-select: text;*/
-/*    -webkit-user-select: text;*/
-/*}*/
-
-@font-face {
-    font-family: "思源宋体", "Noto Serif SC", serif;
-    font-weight: 250;
-    src: url("https://cdn.jsdelivr.net/npm/noto-serif-sc@latest/fonts/NotoSerifSC-ExtraLight.woff2") format("woff2"),
-    url("https://cdn.jsdelivr.net/npm/noto-serif-sc@latest/fonts/NotoSerifSC-ExtraLight.woff") format("woff");
-    font-display: swap;
+  margin: 0;
+  height: 100%;
+  /* 桌面本机应用，字体栈只用系统字体，不再从 CDN 拉思源宋体（离线环境会卡住首屏） */
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
 
 #app {
-    height: 100vh;
-    text-align: center;
-    overflow: hidden;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 滚动条统一细样式，避免 Windows 上默认滚动条破坏整体观感 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ============================================================================
+   通用页面组件（全局）
+   ----------------------------------------------------------------------------
+   各工具页直接复用这里的类，自己的 <style scoped> 里只写页面特有样式。
+   好处：换主题时只需要改上面那套变量，7 个工具页一处都不用动。
+   ============================================================================ */
+
+.page {
+  padding: 22px 24px 28px;
+  box-sizing: border-box;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- 页头 ----------------
+   【只有时区转换页在用】它右挂时区选择器，需要一个横向布局的容器。
+
+   其余 6 个页面已把页头整块删掉，内容直接顶到 .page 的 padding-top。
+   原因：页面标题与左侧菜单名 100% 同义（菜单本身还带高亮），重复显示等于白占高度。
+   留下的那行功能说明也一并删了——那些信息（AES 参数范围、MD5 本地计算、
+   IP 留空查本机…）实际使用中没人看，用户要的是内容区最大化。
+   改动前顶部占 69px（标题 25 + 间距 5 + 说明 21 + 边距 18），现在只剩 22px 的 padding。 */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.page-head p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+/* ---------------- 栅格与卡片 ---------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--tr), box-shadow var(--tr);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+/* 内容较宽的卡片（多字段表单、结果列表）独占整行，横向排布更省空间 */
+.card.wide {
+  grid-column: 1 / -1;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 620;
+  color: var(--text);
+}
+
+.card-head p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* 卡片正文：竖排。注意它必须是 flex 容器，否则 .inp 这类 flex:1 的控件
+   在块级上下文里会退回 textarea 的默认宽度（约 150px），撑不满卡片 */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 卡片左上角的小图标：四种语义色调轮换使用，纯装饰不承担信息 */
+.ci {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+  background: var(--tint1-bg);
+  color: var(--tint1-fg);
+  border: 1px solid var(--tint1-bd);
+}
+
+.ci-2 { background: var(--tint2-bg); color: var(--tint2-fg); border-color: var(--tint2-bd); }
+.ci-3 { background: var(--tint3-bg); color: var(--tint3-fg); border-color: var(--tint3-bd); }
+.ci-4 { background: var(--tint4-bg); color: var(--tint4-fg); border-color: var(--tint4-bd); }
+
+/* ---------------- 表单 ---------------- */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.field-label {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+/* 竖向字段组。注意 .inp 默认 flex:1，放进 flex-direction:column 的容器里
+   会在主轴（高度）塌缩，必须显式还原成 flex:none */
+.fld {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: none;
+}
+
+.fld .inp {
+  flex: none;
+}
+
+.inp {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--tr), box-shadow var(--tr), background var(--tr);
+}
+
+.inp::placeholder {
+  color: var(--text-3);
+}
+
+.inp:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* 多行文本域：高度由 rows 决定，不能被上面的 36px 锁死 */
+textarea.inp {
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+textarea.inp.result-view {
+  min-height: 120px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  resize: vertical;
+}
+
+select.inp {
+  flex: none;
+  cursor: pointer;
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238c94a3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+/* 原生下拉的展开面板由系统绘制，只能写死安全色，不随主题变 */
+select.inp option {
+  color: #171a21;
+  background: #ffffff;
+}
+
+.inp:disabled,
+.btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* ---------------- 按钮 ---------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--tr), color var(--tr), border-color var(--tr), box-shadow var(--tr);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+/* 次要强调：淡色底 + 描边，用于「解密」「转换」这类同级动作 */
+.btn.soft {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-border);
+}
+
+.btn.soft:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn.ghost {
+  background: var(--surface);
+  color: var(--text-2);
+  border-color: var(--border);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn.danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn.sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: var(--radius-xs);
+}
+
+/* ---------------- 结果条 ---------------- */
+.out {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.out .val {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.out-empty {
+  background: var(--surface-2);
+  color: var(--text-3);
+  border-color: var(--border);
+}
+
+.out-ok {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-border);
+  font-weight: 600;
+}
+
+.out-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 9px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  color: inherit;
+  opacity: .7;
+  cursor: pointer;
+  transition: opacity var(--tr), background var(--tr);
+}
+
+.copy:hover {
+  opacity: 1;
+  background: var(--surface-3);
+}
+
+/* ---------------- 键值列表（IP 信息这类只读字段） ---------------- */
+.kv {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.kv:last-child {
+  border-bottom: none;
+}
+
+.kv .k {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.kv .v {
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+/* ---------------- 状态：加载 & 空态 ---------------- */
+.spinner {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ui-spin .7s linear infinite;
+}
+
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+.state-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 96px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* ---------------- 提示浮层 ---------------- */
+/* 卡片式：中性底 + 深色文字，语义只由左侧圆形图标承载（成功绿勾 / 失败红叉）。
+   取代原来的「实心绿块白字」——这东西一天要弹几十次、2.6 秒就消失，不该抢注意力。
+
+   图标用 ::before 画而不用模板里的 <svg>：4 个页面都在用 toast，但历史上只有 TimeTool
+   写了内联图标、其他 3 个是纯文字。伪元素可以一处改全站生效，不必动任何模板。 */
+.message-toast {
+  position: fixed;
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 深色主题把 --shadow-lg 关成了 none，卡片式浮层没阴影会「贴」在页面上，必须单独补一条 */
+:root[data-theme="dark"] .message-toast {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+}
+
+.message-toast::before {
+  content: "";
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: var(--success);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 11px 11px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.6 12.4l2.9 2.9 5.8-6.3' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* 失败态刻意比成功态重（软红底 + 红字 + 红叉）：成功高频要安静，失败罕见且重要 */
+.message-toast.error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: var(--danger-soft);
+}
+
+.message-toast.error::before {
+  background-color: var(--danger);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 8l8 8M16 8l-8 8' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.toast-fade-enter-active {
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.toast-fade-leave-active {
+  transition: opacity .4s ease, transform .4s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
 }

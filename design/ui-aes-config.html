@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>AES 加密配置卡：标签是否与控件同行</title>
+<!-- 直接引入真实令牌与全局组件类，几何即真实值 -->
+<link rel="stylesheet" href="../frontend/src/style.css">
+<style>
+  /* 下拉样式在 AppSelect.vue 的 scoped 里，mock 照抄一份保证触发器与真实一致 */
+  .sel { position: relative; }
+  .sel-trigger {
+    display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 12px;
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); cursor: pointer;
+  }
+  .sel-value { flex: 1; min-width: 0; text-align: left; white-space: nowrap; }
+  .sel-caret { flex-shrink: 0; color: var(--text-3); }
+
+  body { margin: 0; padding: 22px 26px 40px; background: var(--bg); }
+  .scene { margin-bottom: 34px; }
+  .scene:last-child { margin-bottom: 0; }
+  .scene > h2 { margin: 0 0 3px; font-size: 13.5px; font-weight: 650; color: var(--text); }
+  .scene > .note { margin: 0 0 12px; font-size: 11.5px; color: var(--text-3); }
+  .scene > .note b { color: var(--text-2); }
+  .grid { outline: 1px dashed var(--border-strong); outline-offset: 6px; }
+
+  /* 真实页里 AES 的样式（来自 AesTool.vue 的 scoped 与全局） */
+  .fld-key { flex: 1; min-width: 220px; }
+  .fld-inline { display: flex; align-items: center; gap: 8px; flex: none; }
+  .fld-inline .field-label { white-space: nowrap; }
+  /* 密钥那一组必须自己吃满剩余宽度：.fld-inline 的 flex:none 会盖掉 .fld-key 的 flex:1（同权重、后者在后） */
+  .fld-inline.fld-key { flex: 1 1 auto; min-width: 220px; }
+  .row-cfg { align-items: center; gap: 20px; }
+
+  /* 下面三张是 AES 页真实的三张卡，用来算整页高度账本 */
+  .full { width: 894px; }
+  .full .card { margin-bottom: 14px; }
+  .ta { width: 100%; box-sizing: border-box; }
+</style>
+</head>
+<body>
+
+<!-- ================= A：现状（label 在控件上方） ================= -->
+<div class="scene" data-n="A">
+  <h2>A · 现状：标签在控件上方（字段组竖排）</h2>
+  <p class="note">配置卡 <b>137</b>　·　head 32 + gap 12 + 字段组 57</p>
+  <div class="grid" style="width:894px">
+    <section class="card wide">
+      <div class="card-head">
+        <span class="ci"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2"/><circle cx="15" cy="16" r="2.2"/></svg></span>
+        <h3>加密配置</h3>
+      </div>
+      <div class="card-body">
+        <div class="row row-cfg">
+          <div class="fld"><span class="field-label">加密模式</span><span class="sel"><button type="button" class="sel-trigger" style="min-width:200px"><span class="sel-value">AES-128-CBC</span><svg class="sel-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></span></div>
+          <div class="fld fld-key"><span class="field-label">密钥</span><input type="text" class="inp" placeholder="请输入加密密钥"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ================= B：标签与控件同行 ================= -->
+<div class="scene" data-n="B">
+  <h2>B · 标签与控件同行（和 RSA 页现在的排法一致）</h2>
+  <p class="note">配置卡 <b>116</b>（现状 137）　·　省 <b>21px</b>　·　代价：密钥输入框 640 → <b>555</b> 宽（行尾留白两版都是 0）</p>
+  <div class="grid" style="width:894px">
+    <section class="card wide">
+      <div class="card-head">
+        <span class="ci"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2"/><circle cx="15" cy="16" r="2.2"/></svg></span>
+        <h3>加密配置</h3>
+      </div>
+      <div class="card-body">
+        <div class="row row-cfg">
+          <div class="fld-inline"><span class="field-label">加密模式</span><span class="sel"><button type="button" class="sel-trigger" style="min-width:200px"><span class="sel-value">AES-128-CBC</span><svg class="sel-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></span></div>
+          <div class="fld-inline fld-key"><span class="field-label">密钥</span><input type="text" class="inp" placeholder="请输入加密密钥" style="flex:1;min-width:0"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ================= C：整页三张卡（B 方案下的高度账本） ================= -->
+<div class="scene" data-n="C">
+  <h2>C · B 方案下的整页高度账本（三张卡，textarea 4 行 / 结果 6 行）</h2>
+  <p class="note">配置 116 + 输入 229 + 结果 220 + 卡间距 28 = <b>593</b>，加 .page 上下内边距 50 → <b>643</b>（现状 664）</p>
+  <div class="full">
+    <section class="card wide">
+      <div class="card-head">
+        <span class="ci"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.2"/><circle cx="15" cy="16" r="2.2"/></svg></span>
+        <h3>加密配置</h3>
+      </div>
+      <div class="card-body">
+        <div class="row row-cfg">
+          <div class="fld-inline"><span class="field-label">加密模式</span><span class="sel"><button type="button" class="sel-trigger" style="min-width:200px"><span class="sel-value">AES-128-CBC</span><svg class="sel-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></span></div>
+          <div class="fld-inline fld-key"><span class="field-label">密钥</span><input type="text" class="inp" placeholder="请输入加密密钥" style="flex:1;min-width:0"></div>
+        </div>
+      </div>
+    </section>
+    <section class="card wide">
+      <div class="card-head">
+        <span class="ci ci-2"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5H6.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V9z"/><path d="M12 3.5V9h5.5"/></svg></span>
+        <h3>输入内容</h3>
+      </div>
+      <div class="card-body">
+        <textarea class="inp mono ta" rows="4" placeholder="请输入要加密或解密的文本内容…"></textarea>
+        <div class="row">
+          <button class="btn primary">加密</button>
+          <button class="btn soft">解密</button>
+          <button class="btn ghost">清空</button>
+        </div>
+      </div>
+    </section>
+    <section class="card wide">
+      <div class="card-head">
+        <span class="ci ci-2"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></span>
+        <h3>加密结果</h3>
+      </div>
+      <div class="card-body">
+        <textarea class="inp mono ta" rows="6"></textarea>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var q = new URLSearchParams(location.search);
+  document.documentElement.dataset.theme = q.get('theme') || 'light';
+  var only = q.get('only');
+  if (only) {
+    document.querySelectorAll('.scene').forEach(function (s) {
+      if (s.dataset.n !== only) s.style.display = 'none';
+    });
+  }
+});
+</script>
+</body>
+</html>

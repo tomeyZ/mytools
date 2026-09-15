@@ -6,14 +6,6 @@ export function CheckUpdate() {
   return window['go']['handler']['VersionHandler']['CheckUpdate']();
 }
 
-export function Download() {
-  return window['go']['handler']['VersionHandler']['Download']();
-}
-
 export function GetCurrentVersion() {
   return window['go']['handler']['VersionHandler']['GetCurrentVersion']();
-}
-
-export function GetVersionLatest() {
-  return window['go']['handler']['VersionHandler']['GetVersionLatest']();
 }

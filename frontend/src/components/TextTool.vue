@@ -1,7 +1,9 @@
 <template>
-  <div class="ace-tool-container">
-    <div ref="aceEditor" class="ace-editor">
-      <!-- 空内容时的快捷键提示 -->
+  <div class="page fill">
+    <!-- 注意：ace.edit() 会重建容器的 innerHTML，提示必须放在容器【外面】的兄弟节点上，
+         否则初始化时就被抹掉，且 isEmpty 不变 Vue 也不会重新补回来 -->
+    <div class="editor-wrap">
+      <div ref="aceEditor" class="ace-host"></div>
       <div class="editor-placeholder" v-if="isEmpty" @mousedown.prevent>
         Ctrl+F 查找 / Ctrl+H 替换（支持正则）<br>
         粘贴或输入文本开始编辑
@@ -25,18 +27,21 @@ import 'ace-builds/src-noconflict/ace';
 import 'ace-builds/src-noconflict/mode-text';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import 'ace-builds/src-noconflict/theme-github';
+import 'ace-builds/src-noconflict/theme-github_dark';
+import { ACE_THEME, currentTheme, onThemeChange } from '../theme.js';
 
 export default {
   name: 'TextTool',
   data() {
     return {
       isEmpty: true
-    }
+    };
   },
   mounted() {
     this.editor = ace.edit(this.$refs.aceEditor, {
       mode: 'ace/mode/text',
-      theme: 'ace/theme/github',
+      // ace 的主题是运行时往文档里插 <style>，不跟 CSS 变量走，只能主动切
+      theme: ACE_THEME[currentTheme()] || ACE_THEME.light,
       wrap: true,
       printMargin: false,
       fontSize: 14,
@@ -46,6 +51,10 @@ export default {
     });
     this.editor.setValue('', -1);
 
+    this.offTheme = onThemeChange((t) => {
+      if (this.editor) this.editor.setTheme(ACE_THEME[t] || ACE_THEME.light);
+    });
+
     // 内容变化时切换占位提示
     this.editor.session.on('change', () => {
       this.isEmpty = this.editor.getValue().length === 0;
@@ -54,6 +63,7 @@ export default {
     this.observeSearchBox();
   },
   beforeUnmount() {
+    if (this.offTheme) this.offTheme();
     if (this.observer) this.observer.disconnect();
     if (this.editor) {
       this.editor.destroy();
@@ -103,24 +113,32 @@ export default {
       });
     }
   }
-}
+};
 </script>
 
 <style scoped>
-.ace-tool-container {
+/* 编辑器页面要占满内容区高度：外层 .content 有确定高度，这里用 100% 而不是
+   calc(100vh - N)，避免顶栏尺寸一变就溢出 */
+.fill {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 40px);
+  height: 100%;
   box-sizing: border-box;
-  gap: 8px;
 }
 
-.ace-editor {
+.editor-wrap {
   position: relative;
+  display: flex;
   flex: 1;
-  border: 1px solid #dadce0;
-  border-radius: 8px;
   min-height: 0;
+}
+
+.ace-host {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 /* 空内容占位提示：覆盖在编辑器上方，不挡点击 */
@@ -131,7 +149,7 @@ export default {
   pointer-events: none;
   font-size: 14px;
   line-height: 1.9;
-  color: #9aa0a6;
+  color: var(--text-3);
   z-index: 5;
 }
 
@@ -142,72 +160,74 @@ export default {
   justify-content: center;
   flex-wrap: wrap;
   gap: 4px 20px;
+  margin-top: 10px;
   padding: 8px 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #5f6368;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--text-2);
   flex-shrink: 0;
 }
 
 .hint-title {
   font-weight: 600;
-  color: #3c4043;
+  color: var(--text);
 }
 
 .hint-bar kbd {
   display: inline-block;
   padding: 1px 7px;
-  background: #fff;
-  border: 1px solid #dadce0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-bottom-width: 2px; /* 模拟键帽立体感 */
   border-radius: 4px;
-  font-family: Consolas, monospace;
-  font-size: 12px;
-  color: #3c4043;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text);
   margin-right: 4px;
 }
 
 .hint-bar code {
   padding: 0 4px;
-  background: #e8eaed;
+  background: var(--surface-3);
   border-radius: 3px;
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 /* ace 查找面板：加宽 + 内部输入框自适应拉伸 */
-.ace-tool-container :deep(.ace_search) {
+.page :deep(.ace_search) {
   max-width: none !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-sm) !important;
   cursor: move;
 }
 
 /* 输入框和按钮恢复各自光标 */
-.ace-tool-container :deep(.ace_search) input {
+.page :deep(.ace_search) input {
   cursor: auto;
 }
 
-.ace-tool-container :deep(.ace_button),
-.ace-tool-container :deep(.ace_searchbtn),
-.ace-tool-container :deep(.ace_searchbtn_close) {
+.page :deep(.ace_button),
+.page :deep(.ace_searchbtn),
+.page :deep(.ace_searchbtn_close) {
   cursor: pointer;
 }
 
 /* 查找/替换表单改 flex，输入框占满剩余宽度（ace 默认 min-width 17em 固定短宽度） */
-.ace-tool-container :deep(.ace_search_form),
-.ace-tool-container :deep(.ace_replace_form) {
+.page :deep(.ace_search_form),
+.page :deep(.ace_replace_form) {
   display: flex;
   align-items: center;
   margin: 4px 36px 4px 12px; /* 右侧留白避开右上角关闭按钮 */
 }
 
-.ace-tool-container :deep(.ace_search_field) {
+.page :deep(.ace_search_field) {
   flex: 1;
   min-width: 0 !important;
   width: auto !important;
 }
 
-.ace-tool-container :deep(.ace_searchbtn) {
+.page :deep(.ace_searchbtn) {
   flex-shrink: 0;
 }
 </style>

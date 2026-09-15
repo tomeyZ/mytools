@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>时区页 hero 行改造 · 方案对比</title>
+<style>
+/* ============ 设计令牌（与 style.css 完全一致，保证图稿颜色=上线颜色） ============ */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Courier New", monospace;
+  --radius: 12px; --radius-sm: 9px; --radius-xs: 6px;
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.05);
+  --shadow: 0 4px 16px rgba(16,24,40,.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,40,.12);
+  --tr: .18s ease;
+}
+:root, :root[data-theme="light"] {
+  --bg:#f6f7f9; --surface:#fff; --surface-2:#f4f5f7; --surface-3:#eceef1;
+  --border:#e4e6eb; --border-strong:#d3d7de;
+  --text:#171a21; --text-2:#5b6371; --text-3:#8c94a3; --on-accent:#fff;
+  --accent:#4f46e5; --accent-strong:#4338ca; --accent-soft:#eef0fe; --accent-border:#dfe3fd;
+  --ring:rgba(79,70,229,.16);
+  --tint2-bg:#e7f7ef; --tint2-fg:#12a150; --tint2-bd:#d2f0e1;
+}
+:root[data-theme="dark"] {
+  --bg:#0e1116; --surface:#151a22; --surface-2:#1a2029; --surface-3:#222a35;
+  --border:#242c37; --border-strong:#313b49;
+  --text:#e6eaf1; --text-2:#98a3b3; --text-3:#6b7688; --on-accent:#04191e;
+  --accent:#22d3ee; --accent-strong:#67e8f9; --accent-soft:rgba(34,211,238,.11);
+  --accent-border:rgba(34,211,238,.28); --ring:rgba(34,211,238,.18);
+  --tint2-bg:rgba(52,211,153,.10); --tint2-fg:#34d399; --tint2-bd:rgba(52,211,153,.22);
+  --shadow-sm:none; --shadow:none; --shadow-lg:none;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 28px 0 60px;
+  font-family: var(--font-sans); font-size: 13px;
+  color: var(--text); background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { width: 1000px; margin: 0 auto; }
+
+/* ---- 图稿顶栏 ---- */
+.doc-head { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.doc-head h1 { margin: 0 0 4px; font-size: 20px; font-weight: 650; letter-spacing: -.01em; }
+.doc-head p { margin: 0; font-size: 12.5px; color: var(--text-3); }
+.spacer { margin-left: auto; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface);
+       border: 1px solid var(--border); border-radius: 999px; }
+.seg button {
+  border: 0; background: transparent; font: inherit; font-size: 12px; color: var(--text-2);
+  padding: 5px 13px; border-radius: 999px; cursor: pointer; transition: all var(--tr);
+}
+.seg button.on { background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
+
+/* ---- 方案卡 ---- */
+.opt {
+  margin-bottom: 26px; padding: 20px 22px 22px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+.opt-head { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
+.badge {
+  padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  background: var(--tint2-bg); color: var(--tint2-fg); border: 1px solid var(--tint2-bd);
+}
+.badge.ghost { background: var(--surface-2); color: var(--text-3); border-color: var(--border); }
+.opt-head h2 { margin: 0; font-size: 15px; font-weight: 640; }
+.opt-desc { margin: 0 0 16px; font-size: 12.5px; color: var(--text-2); line-height: 1.7; }
+.opt-desc b { color: var(--text); font-weight: 620; }
+
+/* ---- 模拟页面区域（宽度 = 真实内容区 916px） ---- */
+.mini {
+  position: relative;
+  width: 916px; padding: 22px 24px 24px;
+  background: var(--bg); border: 1px dashed var(--border-strong); border-radius: 10px;
+}
+/* 红色虚线：内容区右边缘。用来看「下拉按钮右边缘是否还贴着这条线」——
+   下方卡片、hero 行全都以它为右边界，控件一旦离开它，整页右边就散了 */
+.mini::after {
+  content: "内容区右边缘";
+  position: absolute; top: 6px; bottom: 12px; right: 24px;
+  border-right: 1px dashed var(--danger);
+  padding-left: 3px; font-size: 10px; letter-spacing: .08em;
+  color: var(--danger); opacity: .6; writing-mode: vertical-rl; pointer-events: none;
+}
+
+/* 页头 */
+.page-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.page-head p { margin: 0; font-size: 12.5px; color: var(--text-3); }
+.hz-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+/* 时区徽章（从 hero 上移到这里） */
+.tz-badge {
+  padding: 5px 9px; border-radius: 999px; font-family: var(--font-mono);
+  font-size: 11.5px; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border);
+}
+
+/* 触发按钮 */
+.tz-trigger {
+  display: flex; align-items: center; gap: 8px; width: 222px; height: 36px;
+  padding: 0 10px 0 12px; font-family: inherit; font-size: 13px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.tz-offset {
+  margin-left: auto; padding: 2px 6px; border-radius: 5px; font-size: 11px;
+  color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border);
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ===== 方案 1/2：一行式 ===== */
+.hero-line {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 18px; margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+.hero-line.plain {
+  /* 方案 2：不要卡片 */
+  padding: 0 2px 14px; background: transparent; border: 0; border-radius: 0; box-shadow: none;
+}
+.h-cell { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.h-key { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.h-val { font-size: 18px; font-weight: 620; letter-spacing: -.01em; color: var(--text);
+         font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.h-sep { width: 1px; height: 17px; background: var(--border-strong); flex-shrink: 0; }
+
+/* 暂停按钮 */
+.icon-btn {
+  display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  margin-left: auto; border: 1px solid var(--border); border-radius: var(--radius-xs);
+  background: var(--surface); color: var(--text-2); cursor: pointer; transition: all var(--tr);
+}
+.icon-btn:hover { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-soft); }
+.hero-line.plain .icon-btn { background: var(--surface); }
+
+/* ===== 方案 3：现状（对照） ===== */
+.hero-old {
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  padding: 16px 20px; margin-bottom: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+}
+.hero-item { display: flex; flex-direction: column; gap: 5px; }
+.hero-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.hero-value { font-size: 21px; font-weight: 620; letter-spacing: -.01em; color: var(--text);
+              font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hero-divider { width: 1px; height: 38px; background: var(--border); }
+
+/* 下方卡片占位（表示后面还有内容） */
+.fake-card {
+  height: 96px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.fake-row { display: flex; gap: 16px; }
+.fake-row .fake-card { flex: 1; }
+
+/* ---- 底部结论 ---- */
+.verdict {
+  padding: 16px 18px; margin-top: 4px; border-radius: var(--radius-sm);
+  background: var(--accent-soft); border: 1px solid var(--accent-border);
+  font-size: 12.5px; line-height: 1.75; color: var(--text-2);
+}
+.verdict h3 { margin: 0 0 6px; font-size: 13px; color: var(--accent-strong); }
+.verdict ul { margin: 6px 0 0; padding-left: 18px; }
+.verdict li { margin: 3px 0; }
+.verdict b { color: var(--text); }
+
+.stat { font-size: 11.5px; color: var(--text-3); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div>
+      <h1>时区页「当前时间」行 · 改造方案</h1>
+      <p>时钟是真实跳动的，暂停按钮可点；右上角可切浅色 / 深色。下面每一块都是 916px 真实内容区宽度。</p>
+    </div>
+    <div class="spacer"></div>
+    <div class="seg" id="themeSeg">
+      <button data-t="light" class="on">浅色</button>
+      <button data-t="dark">深色</button>
+    </div>
+  </div>
+
+  <!-- ============ 方案 1 ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="badge">方案 1 · 推荐</span>
+      <h2>一行式（保留卡片）＋ 时区串上移到下拉左侧</h2>
+    </div>
+    <p class="opt-desc">
+      标签走淡灰小字、值走 18px 等宽数字，中间竖线分隔，<b>暂停按钮仍留在行尾</b>；
+      <b><code class="mono">Asia/Shanghai</code> 做成徽章紧挨在下拉按钮左边</b>——它和下拉说的是同一件事（当前时区），
+      放一起语义不散。这一块从 95px 压到 72px。
+    </p>
+
+    <div class="mini">
+      <div class="page-head">
+        <p>时间戳与日期互转 · 支持 8 个常用时区</p>
+        <div class="hz-right">
+          <span class="tz-badge mono">Asia/Shanghai</span>
+          <div class="tz-trigger">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-3)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/>
+            </svg>
+            <span>中国标准时间</span>
+            <span class="tz-offset mono">UTC+8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-line">
+        <div class="h-cell">
+          <span class="h-key">当前时间</span>
+          <span class="h-val" data-time>2026-09-13 22:25:46</span>
+        </div>
+        <div class="h-sep"></div>
+        <div class="h-cell">
+          <span class="h-key">当前时间戳</span>
+          <span class="h-val" data-ts>1757771146</span>
+        </div>
+        <button class="icon-btn" data-pause title="暂停刷新">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="fake-row"><div class="fake-card"></div><div class="fake-card"></div></div>
+    </div>
+    <div class="stat" style="margin-top:8px">实测：页头 36 + 行 56 + 行下间距 16 = <b>108px</b>（现状 131px，省 23px）</div>
+  </div>
+
+  <!-- ============ 方案 1B ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="badge ghost">方案 1B</span>
+      <h2>徽章放在下拉<em style="font-style:normal;color:var(--accent-strong)">右侧</em>（你问的这个位置）</h2>
+    </div>
+    <p class="opt-desc">
+      排版完全一致，只是把 <code class="mono">Asia/Shanghai</code> 挪到下拉按钮后面。
+      问题看红虚线：<b>下拉按钮被顶得离开内容区右边缘 111px</b>——它本来和下面的卡片、和 hero 行共用同一条右边界，
+      现在整组被徽章推出去，页面右边就"散"了；<b>而徽章自己顶到了最外侧</b>，
+      读起来像"下拉按钮是主角，右边挂了个越界的尾巴"。
+    </p>
+
+    <div class="mini">
+      <div class="page-head">
+        <p>时间戳与日期互转 · 支持 8 个常用时区</p>
+        <div class="hz-right">
+          <div class="tz-trigger">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-3)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/>
+            </svg>
+            <span>中国标准时间</span>
+            <span class="tz-offset mono">UTC+8</span>
+          </div>
+          <span class="tz-badge mono">Asia/Shanghai</span>
+        </div>
+      </div>
+
+      <div class="hero-line">
+        <div class="h-cell">
+          <span class="h-key">当前时间</span>
+          <span class="h-val" data-time>2026-09-13 22:25:46</span>
+        </div>
+        <div class="h-sep"></div>
+        <div class="h-cell">
+          <span class="h-key">当前时间戳</span>
+          <span class="h-val" data-ts>1757771146</span>
+        </div>
+        <button class="icon-btn" data-pause title="暂停刷新">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="fake-row"><div class="fake-card"></div><div class="fake-card"></div></div>
+    </div>
+    <div class="stat" style="margin-top:8px">下拉按钮右边缘距红虚线 <b id="gapPx">—</b>px（方案 1 为 0px，紧贴）</div>
+  </div>
+
+  <!-- ============ 方案 2 ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="badge ghost">方案 2 · 更省空间</span>
+      <h2>一行式（去掉卡片，直接贴内容区）</h2>
+    </div>
+    <p class="opt-desc">
+      和方案 1 排版一致，只是<b>把那张 hero 卡片整个撤掉</b>，一行字直接压在页面上，靠字号和留白区分层级。
+      最省地方，但整页会显得<b>更"平"</b>——这行信息没有容器兜着，视觉上更像一行说明文字而不是数据区。
+    </p>
+
+    <div class="mini">
+      <div class="page-head">
+        <p>时间戳与日期互转 · 支持 8 个常用时区</p>
+        <div class="hz-right">
+          <span class="tz-badge mono">Asia/Shanghai</span>
+          <div class="tz-trigger">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-3)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1 4-9 14 14 0 0 1 4-9z"/>
+            </svg>
+            <span>中国标准时间</span>
+            <span class="tz-offset mono">UTC+8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-line plain">
+        <div class="h-cell">
+          <span class="h-key">当前时间</span>
+          <span class="h-val" data-time>2026-09-13 22:25:46</span>
+        </div>
+        <div class="h-sep"></div>
+        <div class="h-cell">
+          <span class="h-key">当前时间戳</span>
+          <span class="h-val" data-ts>1757771146</span>
+        </div>
+        <button class="icon-btn" data-pause title="暂停刷新">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+            <rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="fake-row"><div class="fake-card"></div><div class="fake-card"></div></div>
+    </div>
+    <div class="stat" style="margin-top:8px">实测：页头 36 + 行 42（含下留白 14）+ 间距 16 = <b>94px</b>（省 37px）</div>
+  </div>
+
+  <!-- ============ 方案 3 · 现状 ============ -->
+  <div class="opt">
+    <div class="opt-head">
+      <span class="badge ghost">方案 3 · 对照</span>
+      <h2>现状（两行分栏卡片）</h2>
+    </div>
+    <p class="opt-desc">放在这里当参照物。注意时区串现在<b>孤零零挂在 hero 右侧</b>，和上面的下拉按钮是分开的两处。</p>
+
+    <div class="mini">
+      <div class="page-head">
+        <p>时间戳与日期互转 · 支持 8 个常用时区</p>
+        <div class="hz-right">
+          <div class="tz-trigger">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--text-3)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/>
+            </svg>
+            <span>中国标准时间</span>
+            <span class="tz-offset mono">UTC+8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-old">
+        <div class="hero-item">
+          <span class="hero-label">当前时间</span>
+          <span class="hero-value" data-time>2026-09-13 22:25:46</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-item">
+          <span class="hero-label">当前时间戳</span>
+          <span class="hero-value" data-ts>1757771146</span>
+        </div>
+        <div class="hz-right">
+          <span class="tz-badge mono">Asia/Shanghai</span>
+          <button class="icon-btn" data-pause title="暂停刷新" style="margin-left:0">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+              <rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="fake-row"><div class="fake-card"></div><div class="fake-card"></div></div>
+    </div>
+    <div class="stat" style="margin-top:8px">实测：页头 36 + 卡片 79 + 间距 16 = <b>131px</b></div>
+  </div>
+
+  <!-- ============ 我的意见 ============ -->
+  <div class="verdict">
+    <h3>我的看法：一行式值得做，但有两个前提</h3>
+    <b>赞成</b>的理由：这一页真正要干的事是下面两张转换卡，"当前时间"是<b>辅助信息</b>——
+    现在它占据 95px 且是页面上唯一的大号卡片，抢了操作区的视觉重心。压成一行后内容区多出 23～37px。
+    <ul>
+      <li><b>时间值不能跟着一起变小。</b>18px 等宽数字 + <code class="mono">tabular-nums</code> 是底线，
+          小到 13px 就变成"一行说明文字"了，而这一行恰恰是全页最该一眼看到的东西。标签（"当前时间"）用 12px 灰字退后，主次才清楚。</li>
+      <li><b>暂停按钮必须留在行尾。</b>它是这一行唯一的交互，放最右符合"操作在两端"的直觉；
+          时间戳宽度固定，按钮不会左右跳。</li>
+      <li><b>时区串放页头我同意，但要贴着下拉按钮放</b>（方案 1 的做法）。
+          不要塞进左边那句说明里——那句话和时区没关系，混在一起两边都不像。</li>
+      <li><b>徽章放下拉的左边，不要放右边</b>（对比方案 1B）。除了"右边界要不要保住"这个硬指标，
+          还有阅读顺序：徽章是"我现在在哪"，下拉是"要不要换"，从左到右先值后控件才顺；
+          反过来控件在左、尾巴在右，更像是没收拾干净。</li>
+    </ul>
+    建议在方案 1 基础上加一个小增强：<b>徽章可点击复制</b>（<code class="mono">Asia/Shanghai</code> 这种字符串开发者经常要贴到代码里），
+    悬停时显示复制图标，零成本。
+  </div>
+
+</div>
+
+<script>
+// 单方案放大模式：?only=1|2|3（截图看细节用）
+(function () {
+  var only = new URLSearchParams(location.search).get('only');
+  if (!only) return;
+  document.querySelectorAll('.opt').forEach(function (o, i) {
+    if (String(i + 1) !== only) o.style.display = 'none';
+  });
+  document.querySelector('.doc-head').style.display = 'none';
+  document.querySelector('.verdict').style.display = 'none';
+  document.body.style.paddingTop = '18px';
+})();
+
+// 主题（支持 ?theme=dark 直接进深色，方便截图对比）
+(function () {
+  var t = new URLSearchParams(location.search).get('theme');
+  if (t === 'dark' || t === 'light') {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('#themeSeg button').forEach(function (x) {
+      x.classList.toggle('on', x.dataset.t === t);
+    });
+  }
+})();
+document.querySelectorAll('#themeSeg button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.documentElement.setAttribute('data-theme', b.dataset.t);
+    document.querySelectorAll('#themeSeg button').forEach(function (x) { x.classList.remove('on'); });
+    b.classList.add('on');
+  });
+});
+
+// 时钟
+var paused = false;
+function fmt(d) {
+  var p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+         p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+function tick() {
+  if (paused) return;
+  var d = new Date();
+  document.querySelectorAll('[data-time]').forEach(function (el) { el.textContent = fmt(d); });
+  document.querySelectorAll('[data-ts]').forEach(function (el) { el.textContent = Math.floor(d.getTime() / 1000); });
+}
+var PAUSE = '<rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/>';
+var PLAY = '<path d="M8 5l11 7-11 7z"/>';
+document.querySelectorAll('[data-pause]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    paused = !paused;
+    document.querySelectorAll('[data-pause]').forEach(function (b) {
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">' + (paused ? PLAY : PAUSE) + '</svg>';
+      b.title = paused ? '继续刷新' : '暂停刷新';
+    });
+  });
+});
+tick();
+setInterval(tick, 1000);
+
+// 自动标注 1B 的偏移量：下拉按钮右边缘 与 内容区右边缘 的距离（方案 1 应为 0）
+(function () {
+  var opts = document.querySelectorAll('.opt');
+  var box = document.getElementById('gapPx');
+  if (!box || opts.length < 2) return;
+  var mini = opts[1].querySelector('.mini');
+  var tri = opts[1].querySelector('.tz-trigger');
+  if (!mini || !tri) return;
+  box.textContent = Math.round((mini.getBoundingClientRect().right - 24) - tri.getBoundingClientRect().right);
+})();
+</script>
+</body>
+</html>

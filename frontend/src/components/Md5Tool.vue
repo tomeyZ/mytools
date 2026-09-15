@@ -1,74 +1,73 @@
 <template>
-  <div class="md5-container">
-    <h2>MD5加密工具</h2>
-    <div class="input-area">
-      <textarea
-          v-model="inputText"
-          class="input-textarea"
-          placeholder="请输入要加密的内容"
-          rows="5"
-      ></textarea>
+  <div class="page">
+    <div class="grid">
+      <section class="card wide">
+        <div class="card-head">
+          <span class="ci">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 9h16M4 15h16"/><path d="M10 3.5 8 20.5M16 3.5l-2 17"/>
+            </svg>
+          </span>
+          <div>
+            <h3>输入原文</h3>
+            <p>任意文本内容，支持多行</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea
+              v-model="inputText"
+              class="inp mono"
+              rows="6"
+              placeholder="请输入要加密的内容"
+          ></textarea>
+          <div class="row">
+            <button class="btn primary" @click="handleMd5Encrypt">MD5 加密</button>
+            <button class="btn ghost" @click="handleClear">清空</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card wide" v-if="showResults">
+        <div class="card-head">
+          <span class="ci ci-2">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="2.4"/>
+              <path d="M8 9h8M8 13h8M8 17h5"/>
+            </svg>
+          </span>
+          <div>
+            <h3>计算结果</h3>
+            <p>点击右侧按钮复制</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div v-for="item in rows" :key="item.label" class="out out-ok">
+            <span class="tag">{{ item.label }}</span>
+            <span class="val mono">{{ item.value }}</span>
+            <button class="copy" title="复制" @click="handleCopy(item.value, item.label)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
-    <div class="btn-group">
-      <button class="md5-btn" @click="handleMd5Encrypt">MD5加密</button>
-      <button class="clear-btn" @click="handleClear">清空</button>
-    </div>
-    <div class="result-area" v-if="showResults">
-      <div class="result-item">
-        <label>32位大写：</label>
-        <span>{{ result32Upper }}</span>
-        <button class="copy-btn" @click="copyText(result32Upper)">复制</button>
-      </div>
-      <div class="result-item">
-        <label>32位小写：</label>
-        <span>{{ result32Lower }}</span>
-        <button class="copy-btn" @click="copyText(result32Lower)">复制</button>
-      </div>
-      <div class="result-item">
-        <label>16位大写：</label>
-        <span>{{ result16Upper }}</span>
-        <button class="copy-btn" @click="copyText(result16Upper)">复制</button>
-      </div>
-      <div class="result-item">
-        <label>16位小写：</label>
-        <span>{{ result16Lower }}</span>
-        <button class="copy-btn" @click="copyText(result16Lower)">复制</button>
-      </div>
-    </div>
-    <!-- 复制成功提示 -->
-    <transition name="fade">
-      <div v-if="showCopySuccess" class="copy-success-message">
-        <svg class="icon" viewBox="0 0 1024 1024" width="16" height="16">
-          <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm193.5 301.7l-210.6 292a31.8 31.8 0 0 1-51.7 0L318.5 484.9c-3.8-5.3 0-12.7 6.5-12.7h46.9c10.2 0 19.9 4.9 25.9 13.3l71.2 98.8 157.2-218c6-8.3 15.6-13.3 25.9-13.3H699c6.5 0 10.3 7.4 6.5 12.7z" fill="#fff"/>
-        </svg>
-        复制成功
-      </div>
+
+    <transition name="toast-fade">
+      <div v-if="toast.show" :class="['message-toast', toast.type]">{{ toast.text }}</div>
     </transition>
   </div>
 </template>
 
 <script>
-import {computed, ref} from 'vue';
 import md5 from 'js-md5';
+import { copyText } from '../clipboard.js';
+import { toastMixin } from '../toast.js';
 
 export default {
-  setup() {
-    const showCopySuccess = ref(false);
-    let copyTimer = null;
-
-    const showCopyMessage = () => {
-      showCopySuccess.value = true;
-      if (copyTimer) clearTimeout(copyTimer);
-      copyTimer = setTimeout(() => {
-        showCopySuccess.value = false;
-      }, 2000);
-    };
-
-    return {
-      showCopySuccess,
-      showCopyMessage
-    };
-  },
+  name: 'Md5Tool',
+  mixins: [toastMixin],
   data() {
     return {
       inputText: '',
@@ -76,8 +75,18 @@ export default {
       result32Lower: '',
       result16Upper: '',
       result16Lower: '',
-      showResults: false,
+      showResults: false
     };
+  },
+  computed: {
+    rows() {
+      return [
+        { label: '32 位大写', value: this.result32Upper },
+        { label: '32 位小写', value: this.result32Lower },
+        { label: '16 位大写', value: this.result16Upper },
+        { label: '16 位小写', value: this.result16Lower }
+      ];
+    }
   },
   methods: {
     handleMd5Encrypt() {
@@ -97,134 +106,21 @@ export default {
       this.result16Lower = '';
       this.showResults = false;
     },
-    async copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        this.showCopyMessage();
-      } catch (err) {
-        console.error('复制失败:', err);
-      }
+    async handleCopy(text, label) {
+      const ok = await copyText(text);
+      // 4 个结果并排，文案必须带对象，否则分不清复制了哪个
+      this.showToast(ok ? label + '已复制' : '复制失败', ok ? 'success' : 'error');
     }
   }
 };
 </script>
 
 <style scoped>
-.md5-container {
-  margin: 0 auto;
-  padding: 24px;
-  background-color: #fff;
-  border-radius: 8px;
-  position: relative;
-  font-family: "思源宋体", "Noto Serif SC", serif;
-}
-
-.md5-container {
-  font-family: inherit;
-}
-
-h2 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-}
-.input-area {
-  margin-bottom: 15px;
-}
-.input-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  resize: none;
-  box-sizing: border-box;
-  font-size: 14px;
-}
-.btn-group {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.md5-btn {
-  padding: 8px 16px;
-  background-color: #3498db;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.md5-btn:hover {
-  background-color: #2980b9;
-}
-.clear-btn {
-  padding: 8px 16px;
-  background-color: #eee;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.clear-btn:hover {
-  background-color: #ddd;
-}
-.result-area {
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-}
-.result-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.result-item label {
-  font-weight: bold;
-  color: #555;
-}
-.result-item span {
-  flex: 1;
-  margin: 0 10px;
-  word-break: break-all;
-}
-.copy-btn {
-  padding: 4px 8px;
-  background-color: #3498db;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.copy-btn:hover {
-  background-color: #2980b9;
-}
-
-.copy-success-message {
-  position: fixed;
-  right: 40px;
-  top: 40px;
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-.icon {
-  margin-right: 4px;
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: all 0.3s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
+.out .tag {
+  flex: none;
+  width: 76px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
 }
 </style>
