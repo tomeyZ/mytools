@@ -54,18 +54,6 @@ wails build
 wails build -nsis
 ```
 
-## 发布流程
-
-推送 `v` 开头的 tag 即触发 CI，自动构建两个平台的产物并创建 Release。
-
-```bash
-# 1. 把 wails.json 的 version 改成新版本号（不带 v）并提交
-git commit -am "chore: 版本号 1.1.5"
-
-# 2. 打 tag 并推送，需与 wails.json 保持一致
-git tag v1.1.5
-git push origin main --tags
-```
 
 Release 正文会作为更新日志显示在应用的更新提示里。
 
