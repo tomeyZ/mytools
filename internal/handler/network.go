@@ -60,11 +60,6 @@ type ipSource struct {
 }
 
 // ipSources 多个数据源并发查询，最先成功返回的胜出。
-//
-// 之所以要多源：单一接口在国内网络下经常整站不可达（实测 ip-api.com 100% 超时），
-// 而不同网络环境能连通的又是不同的源。并发还能顺带消掉等待时间 ——
-// 谁先返回用谁，不必串行等第一个超时。
-//
 // ip.sb / ipwho.is 在海外、字段最全；vore.top 在国内、返回中文，用来兜底。
 var ipSources = []ipSource{
 	{name: "ip.sb", build: buildIPSBURL, parse: parseIPSB},

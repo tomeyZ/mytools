@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -32,7 +35,40 @@ func (a *App) OpenExternal(url string) {
 	runtime.BrowserOpenURL(a.ctx, url)
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+// SaveQRCode 把前端生成的二维码（data URL）写到用户选定的位置。
+func (a *App) SaveQRCode(dataURL string, defaultName string) (string, error) {
+	const prefix = "data:image/png;base64,"
+
+	if a.ctx == nil {
+		return "", fmt.Errorf("应用尚未就绪")
+	}
+	if !strings.HasPrefix(dataURL, prefix) {
+		return "", fmt.Errorf("图片数据格式不正确")
+	}
+	raw, err := base64.StdEncoding.DecodeString(dataURL[len(prefix):])
+	if err != nil {
+		return "", fmt.Errorf("图片数据解析失败: %w", err)
+	}
+
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "保存二维码",
+		DefaultFilename: defaultName,
+		Filters: []runtime.FileFilter{
+			{DisplayName: "PNG 图片", Pattern: "*.png"},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if path == "" {
+		return "", nil
+	}
+	// 用户可能在对话框里把扩展名删掉或改成别的，统一补回 .png
+	if !strings.HasSuffix(strings.ToLower(path), ".png") {
+		path += ".png"
+	}
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		return "", fmt.Errorf("写入文件失败: %w", err)
+	}
+	return path, nil
 }

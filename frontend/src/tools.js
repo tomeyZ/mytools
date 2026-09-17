@@ -7,6 +7,7 @@ import IpQuery from './components/IpQuery.vue';
 import AesTool from './components/AesTool.vue';
 import RsaTool from './components/RsaTool.vue';
 import TextTool from './components/TextTool.vue';
+import QrcodeTool from './components/QrcodeTool.vue';
 
 // 图标全部内联 SVG：跟随 currentColor 变色、零依赖、离线可用
 const svg = (body) =>
@@ -19,7 +20,8 @@ export const ICON = {
   key: svg('<circle cx="8" cy="15" r="4.2"/><path d="M11 11.9 20.5 2.5"/><path d="M17 6l2 2"/><path d="M19.4 3.6l1.9 1.9"/>'),
   braces: svg('<path d="M8.5 3H7.8A2.8 2.8 0 0 0 5 5.8v3.7A2.8 2.8 0 0 1 2.2 12A2.8 2.8 0 0 1 5 14.5v3.7A2.8 2.8 0 0 0 7.8 21h.7"/><path d="M15.5 3h.7A2.8 2.8 0 0 1 19 5.8v3.7A2.8 2.8 0 0 0 21.8 12A2.8 2.8 0 0 0 19 14.5v3.7A2.8 2.8 0 0 1 16.2 21h-.7"/>'),
   type: svg('<path d="M4.5 6.5V4.5h15v2"/><path d="M12 4.5v15"/><path d="M9 19.5h6"/>'),
-  globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/>')
+  globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/>'),
+  qrcode: svg('<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>')
 };
 
 // 侧边栏菜单。新增工具只需往这里加一条，搜索和侧栏会同步出现
@@ -37,7 +39,8 @@ export const TOOL_GROUPS = [
     label: '数据处理',
     items: [
       { id: 'json', name: 'JSON美化', icon: ICON.braces },
-      { id: 'text', name: '文本处理', icon: ICON.type }
+      { id: 'text', name: '文本处理', icon: ICON.type },
+      { id: 'qrcode', name: '二维码', icon: ICON.qrcode }
     ]
   },
   { label: '网络', items: [{ id: 'ip', name: 'IP地址查询', icon: ICON.globe }] }
@@ -50,7 +53,8 @@ export const TOOL_COMPONENTS = {
   ip: IpQuery,
   aes: AesTool,
   rsa: RsaTool,
-  text: TextTool
+  text: TextTool,
+  qrcode: QrcodeTool
 };
 
 // 展平成列表，供顶栏搜索使用（顺带带上所属分组名）

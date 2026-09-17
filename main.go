@@ -6,6 +6,8 @@ import (
 	"mytools/internal/config"
 	"mytools/internal/handler"
 
+	_ "time/tzdata"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -30,8 +32,8 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:     cfg.Name,
-		Width:     1024,
-		Height:    768,
+		Width:     1150,
+		Height:    800,
 		MinWidth:  1024,
 		MinHeight: 768,
 		AssetServer: &assetserver.Options{

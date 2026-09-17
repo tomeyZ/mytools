@@ -41,7 +41,7 @@ func loadConfig(configData []byte) (*AppConfig, error) {
 	if err := json.Unmarshal(configData, &config); err != nil {
 		return nil, fmt.Errorf("配置解析失败：%v", err)
 	}
-	log.Println("配置加载成功！")
+	fmt.Println("配置加载成功！")
 	return &config, nil
 }
 

@@ -1,42 +1,50 @@
 <template>
   <div v-if="visible && info" class="upd-mask" @click.self="$emit('close')">
     <div class="upd" role="dialog" aria-modal="true" aria-labelledby="upd-title">
+      <!-- 头部淡色强调块：与正文分色，"发生了件事"的重量落在这里；
+           版本号升格为大号主角，标题退成一块小胶囊（仍是 aria-labelledby 指向的标题） -->
       <div class="upd-head">
-        <span class="upd-badge" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>
-          </svg>
-        </span>
-        <h3 id="upd-title">发现新版本</h3>
+        <h3 id="upd-title" class="upd-badge">发现新版本</h3>
         <button class="upd-x" aria-label="关闭" @click="$emit('close')">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M6 6l12 12M18 6L6 18"/>
           </svg>
         </button>
+
+        <div class="upd-ver">
+          <span class="v-old">v{{ currentVersion }}</span>
+          <svg class="v-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12h15"/><path d="m13 6 6 6-6 6"/>
+          </svg>
+          <span class="v-new">v{{ info.version }}</span>
+        </div>
+
+        <!-- 发布日期与版本号同源，跟着版本行走，不再单独占一行 -->
+        <p v-if="info.create_date" class="upd-date">发布于 {{ info.create_date }}</p>
       </div>
 
       <div class="upd-body">
-        <div class="ver-line">
-          <span class="vchip">v{{ currentVersion }}</span>
-          <svg class="v-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12h15"/><path d="m13 6 6 6-6 6"/>
+        <template v-if="log.length">
+          <p class="upd-sub">更新内容</p>
+          <!-- 头部已经分色，正文再铺一层灰底就成了"三明治"，所以日志不带面板底 -->
+          <ul class="upd-log">
+            <li v-for="(item, i) in log" :key="i">{{ item }}</li>
+          </ul>
+        </template>
+        <!-- 空状态是纯文字，不能套内容框样式（那样看起来像个没填的输入框） -->
+        <p v-else class="upd-empty">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16h.01"/>
           </svg>
-          <span class="vchip new">v{{ info.version }}</span>
-        </div>
-
-        <p v-if="info.create_date" class="upd-date">发布于 {{ info.create_date }}</p>
-
-        <ul v-if="log.length" class="upd-log">
-          <li v-for="(item, i) in log" :key="i">{{ item }}</li>
-        </ul>
-        <p v-else class="upd-log empty">本次发布没有填写更新说明</p>
+          本次发布未填写更新说明
+        </p>
       </div>
 
       <div class="upd-foot">
         <button class="btn ghost" @click="$emit('close')">稍后</button>
         <button class="btn primary" @click="download">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 19h14"/>
           </svg>
           前往下载
         </button>
@@ -100,144 +108,158 @@ export default {
   overflow: hidden;
 }
 
-/* ---------------- 头部 ---------------- */
+/* ---------------- 头部：淡色强调块 ---------------- */
 .upd-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 16px 12px 18px;
-}
-
-.upd-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  position: relative;
+  padding: 17px 18px 15px;
   background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-border);
   color: var(--accent-strong);
 }
 
-.upd-head h3 {
-  flex: 1;
-  min-width: 0;
+/* 标题退成胶囊：主角是版本号，但身份标识不能丢（它仍是 aria-labelledby 的目标） */
+.upd-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
   margin: 0;
-  font-size: 14.5px;
+  padding: 0 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--text);
+  letter-spacing: .2px;
 }
 
 .upd-x {
+  position: absolute;
+  top: 13px;
+  right: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: none;
   width: 26px;
   height: 26px;
   border: none;
   border-radius: var(--radius-xs);
   background: transparent;
-  color: var(--text-3);
+  color: inherit;
+  opacity: .65;
   cursor: pointer;
-  transition: background var(--tr), color var(--tr);
+  transition: background var(--tr), opacity var(--tr);
 }
 
 .upd-x:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  opacity: 1;
+  background: var(--accent-border);
 }
 
-/* ---------------- 正文 ---------------- */
-.upd-body {
-  padding: 0 18px 18px;
-}
-
-.ver-line {
+.upd-ver {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.vchip {
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  background: var(--surface-2);
-  color: var(--text-2);
+  align-items: baseline;
+  gap: 11px;
+  margin-top: 13px;
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -.4px;
 }
 
-.vchip.new {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  font-weight: 600;
+/* 旧版本：删除线 = "已被取代"，比单纯变灰更准确 */
+.v-old {
+  font-size: 18px;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  opacity: .5;
 }
 
 .v-arrow {
   flex: none;
-  color: var(--text-3);
+  align-self: center;
+  opacity: .6;
+}
+
+/* 新版本：这弹窗唯一的主角 */
+.v-new {
+  font-size: 25px;
 }
 
 .upd-date {
-  margin: 10px 0 0;
+  margin: 7px 0 0;
+  font-family: var(--font-mono);
   font-size: 11.5px;
-  color: var(--text-3);
+  opacity: .72;
+}
+
+/* ---------------- 正文 ---------------- */
+.upd-body {
+  padding: 15px 18px 2px;
+}
+
+.upd-sub {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .upd-log {
-  margin: 12px 0 0;
-  padding: 12px 14px;
+  margin: 0;
+  padding: 0 4px 0 0;
   list-style: none;
-  max-height: 210px;
+  max-height: 200px;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
 }
 
 .upd-log li {
   position: relative;
-  padding-left: 13px;
+  padding-left: 14px;
   font-size: 12.5px;
   line-height: 1.75;
   color: var(--text-2);
 }
 
+.upd-log li + li {
+  margin-top: 3px;
+}
+
 .upd-log li::before {
   content: "";
   position: absolute;
-  top: 9px;
+  top: 8px;
   left: 2px;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent);
 }
 
-.upd-log.empty {
-  margin-bottom: 0;
-  color: var(--text-3);
+.upd-empty {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
   font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.upd-empty svg {
+  flex: none;
 }
 
 /* ---------------- 底部 ---------------- */
+/* 头部已有色块，底栏再铺灰底 + 分隔线就是第三次分层，去掉 */
 .upd-foot {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 13px 18px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
+  gap: 9px;
+  padding: 14px 18px 17px;
 }
 
 /* 弹窗里的按钮比表单里的矮一号，视觉上才不像在填表单 */
 .upd-foot .btn {
   height: 32px;
+  padding: 0 15px;
   font-size: 12.5px;
 }
 </style>

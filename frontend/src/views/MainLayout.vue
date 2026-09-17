@@ -1,6 +1,14 @@
 <template>
   <div class="app-shell" :class="{ 'nav-collapsed': collapsed }">
-    <Sidebar :collapsed="collapsed" :active-id="activeTool" @tool-change="handleToolChange"/>
+    <Sidebar
+        :collapsed="collapsed"
+        :active-id="activeTool"
+        :version="version"
+        :update-version="updateInfo ? updateInfo.version : ''"
+        :checking="checking"
+        @tool-change="handleToolChange"
+        @update-click="onVersionClick"
+    />
 
     <div class="shell-main">
       <header class="topbar">
@@ -48,17 +56,6 @@
         </div>
 
         <div class="topbar-right">
-          <!-- 版本号即「检查更新」入口：有新版本时右上角挂红点，点击弹更新卡片 -->
-          <button
-              class="ver-btn"
-              :class="{ checking }"
-              :title="updateInfo ? '有新版本：v' + updateInfo.version + '，点击查看' : '检查更新'"
-              @click="onVersionClick"
-          >
-            {{ version ? 'v' + version : '—' }}
-            <span v-if="updateInfo" class="ver-dot" aria-label="有新版本"></span>
-          </button>
-
           <div class="theme-seg" role="group" aria-label="主题">
             <button
                 v-for="t in themes"
@@ -81,7 +78,7 @@
         </KeepAlive>
       </main>
 
-      <!-- 检查更新：启动时静默查一次，有新版本只在版本号上挂红点，不打扰 -->
+      <!-- 检查更新：启动时静默查一次，有新版本只在侧栏底部那行挂红点，不打扰 -->
       <UpdateDialog
           :visible="dialogOpen"
           :current-version="version"
@@ -452,49 +449,6 @@ export default {
   align-items: center;
   gap: 12px;
   margin-left: auto;
-}
-
-.ver-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  /* 锁住宽度：否则版本号变长/变短会把右边的主题切换整块推着动 */
-  min-width: 62px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--text-3);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  transition: color var(--tr), background var(--tr), border-color var(--tr), opacity var(--tr);
-}
-
-.ver-btn:hover {
-  color: var(--text-2);
-  border-color: var(--accent);
-  background: var(--surface);
-}
-
-.ver-btn.checking {
-  opacity: .55;
-  cursor: default;
-}
-
-/* 有新版本时的红点：--danger 语义色，不与 --accent 混用 */
-.ver-dot {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--danger);
-  box-shadow: 0 0 0 2px var(--surface);
 }
 
 .theme-seg {

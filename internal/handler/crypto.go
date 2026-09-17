@@ -145,6 +145,12 @@ func (h *CryptoHandler) Decrypt(mode, key, text string) CryptoResponse {
 	iv := data[:aes.BlockSize]
 	ciphertext := data[aes.BlockSize:]
 
+	// 与上面 ECB 分支同样的整块校验，不能省：CryptBlocks 对非整块输入会直接 panic
+	// （"crypto/cipher: input not full blocks"）。粘一段被截断的密文就能触发
+	if len(ciphertext)%aes.BlockSize != 0 {
+		return CryptoResponse{Success: false, Message: "密文长度无效，不是块大小的整数倍"}
+	}
+
 	modeDec := cipher.NewCBCDecrypter(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	modeDec.CryptBlocks(plaintext, ciphertext)
@@ -177,6 +183,12 @@ func ecbDecrypt(block cipher.Block, dst, src []byte) {
 func adjustKey(key string, size int) []byte {
 	keyBytes := []byte(key)
 	keyLen := len(keyBytes)
+
+	// 空密钥直接返回全零 key：下面的 keyBytes[i%keyLen] 会除零 panic。
+	// 目前 Encrypt / Decrypt 都先挡了 key == ""，这里只是不让函数本身有这个雷
+	if keyLen == 0 {
+		return make([]byte, size)
+	}
 
 	if keyLen >= size {
 		return keyBytes[:size]
