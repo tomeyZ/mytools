@@ -12,9 +12,11 @@
             </svg>
           </span>
           <h4>内容</h4>
-          <!-- 计数是「内容自己的信息」，挂在内容分区标题右侧；字节不是字符，
-               中文 1 字 = 3 字节，二维码容量按字节算，这样才和右下角信息条对得上 -->
-          <span class="sp"><span class="cnt" :class="{ near: nearLimit }">{{ bytes }} B</span></span>
+          <span class="sp">
+            <span class="hint-inline">{{ level }} 级上限 {{ capacity }} 字节</span>
+            <span class="dot"></span>
+            <span class="cnt" :class="{ near: nearLimit }">{{ bytes }} B</span>
+          </span>
         </div>
 
         <textarea
@@ -24,14 +26,7 @@
             spellcheck="false"
             placeholder="输入要生成二维码的内容 —— 网址、文本、Wi-Fi 配置都可以…"></textarea>
 
-        <!-- 超限提示放输入侧，不铺到右侧图台上：空态和报错态挤同一格，
-             会让人分不清「还没输入」还是「输错了」 -->
-        <div class="hint" :class="{ bad: !!error }">
-          <template v-if="error">{{ error }}</template>
-          <template v-else>
-            支持网址 / 文本 / Wi-Fi 配置 / 名片 · {{ level }} 级上限 <b>{{ capacity }} 字节</b>
-          </template>
-        </div>
+        <div v-if="error" class="hint bad">{{ error }}</div>
       </div>
 
       <!-- ============ 右：二维码 ============ -->
@@ -51,38 +46,32 @@
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
               已生成
             </span>
-            <span v-else class="st idle">等待输入</span>
           </span>
         </div>
 
-        <!-- 空态与出码态同高（split 定高 + 这里 flex:1），所以开始输入时图台不会长个儿 -->
         <div class="qstage" :class="{ ph: !qr }">
           <div class="qstage-body">
             <template v-if="qr">
               <div class="qcard qr-art"><canvas ref="cv"></canvas></div>
             </template>
             <template v-else>
-              <!-- 与识别页同一枚水印。draggable=false + pointer-events:none：
-                   页面内的图默认能被浏览器原生拖走，拖动时甩出一张 ghost 图很难看 -->
+              <!-- draggable=false 阻止浏览器原生拖拽图片 -->
               <div class="ph-frame"><img :src="watermark" alt="" draggable="false"></div>
               <div class="ph-t">左侧输入内容后<br>二维码会实时出现在这里</div>
             </template>
           </div>
 
-          <div class="qstage-cap">
-            <template v-if="qr">
+          <transition name="cap-fade">
+            <div v-if="qr" class="qstage-cap">
               <span class="mono-n">{{ moduleLabel }}</span>
               <span class="dot"></span>
-              <span>{{ bytes }} B</span>
+              <span class="cnt">{{ bytes }} B</span>
               <span class="end">
-                <!-- 版本高说明模块密，导出小尺寸有扫不出的风险 —— 这是唯一能把这个风险
-                     说出口的地方。只提示，不自动改用户的选项，也不弹 toast -->
-                <span v-if="adviseBig" class="tag warn">V{{ qr.version }} · 建议 1024</span>
-                <span v-else class="tag">V{{ qr.version }} · {{ level }}</span>
+                <!-- 版本高模块密，导出小尺寸可能扫不出 -->
+                <span class="tag" :class="{ warn: adviseBig }">V{{ qr.version }} · {{ adviseBig ? '建议 1024' : level }}</span>
               </span>
-            </template>
-            <span v-else class="mono-n">—</span>
-          </div>
+            </div>
+          </transition>
         </div>
       </div>
     </div>
@@ -361,6 +350,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.hint-inline {
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cnt {
@@ -384,7 +382,6 @@ export default {
 
 .st.ok { color: var(--success); }
 .st.bad { color: var(--danger); }
-.st.idle { color: var(--text-3); font-weight: 400; }
 
 /* ---- 输入区 ---- */
 /* .inp 自带 height:36px，这里必须覆盖掉：在 .left 这个 column flex 里
@@ -421,6 +418,7 @@ export default {
 /* ---- 二维码图台 ---- */
 .qstage {
   box-sizing: border-box;
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -502,17 +500,31 @@ export default {
   padding: 0 18px;
 }
 
+/* 元信息浮层，不占布局空间 */
 .qstage-cap {
-  flex: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   gap: 8px;
   height: 36px;
   padding: 0 12px 0 14px;
   border-top: 1px solid var(--border);
+  background: var(--surface-2);
   font-size: 11.5px;
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
+}
+
+.sec .dot,
+.qstage-cap .dot {
+  flex: none;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border-strong);
 }
 
 .qstage-cap .end {
@@ -522,11 +534,14 @@ export default {
   gap: 8px;
 }
 
-.qstage-cap .dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--border-strong);
+.cap-fade-enter-active,
+.cap-fade-leave-active {
+  transition: opacity .15s ease;
+}
+
+.cap-fade-enter-from,
+.cap-fade-leave-to {
+  opacity: 0;
 }
 
 .mono-n {
