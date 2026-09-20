@@ -71,12 +71,12 @@
     <div class="hero">
       <div class="h-cell">
         <span class="h-key">当前时间</span>
-        <span class="h-val mono">{{ currentTime }}</span>
+        <button type="button" class="h-val mono" title="点击复制" @click="copyResult(currentTime, '当前时间')">{{ currentTime }}</button>
         <span class="h-dow">{{ currentWeekday }}</span>
       </div>
       <div class="h-cell">
         <span class="h-key">当前时间戳</span>
-        <span class="h-val mono">{{ currentTimestamp }}</span>
+        <button type="button" class="h-val mono" title="点击复制" @click="copyResult(currentTimestamp, '当前时间戳')">{{ currentTimestamp }}</button>
       </div>
       <button
           type="button"
@@ -464,17 +464,18 @@ export default {
       return null;
     },
     async copyResult(text, label) {
-      if (!text || text.startsWith('格式错误') || text.startsWith('无效')) {
+      const value = String(text ?? '');
+      if (!value || value.startsWith('格式错误') || value.startsWith('无效')) {
         return;
       }
       let ok = false;
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(value);
         ok = true;
       } catch (e) {
         // 降级
         const textarea = document.createElement('textarea');
-        textarea.value = text;
+        textarea.value = value;
         document.body.appendChild(textarea);
         textarea.select();
         ok = document.execCommand('copy');
@@ -796,12 +797,29 @@ export default {
   white-space: nowrap;
 }
 
-.h-val {
+/* 值可点击复制：hover 变主题色作为可点暗示，复制瞬间取的是当下值 */
+button.h-val {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
   font-size: 18px;
   font-weight: 620;
   letter-spacing: -.01em;
   white-space: nowrap;
   color: var(--text);
+  cursor: pointer;
+  transition: color var(--tr);
+}
+
+button.h-val:hover {
+  color: var(--accent-strong);
+}
+
+button.h-val:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: 0 0 0 3px var(--ring);
 }
 
 /* 页头右侧：时区标识 + 下拉，两件东西说的是同一件事，所以贴成一组 */

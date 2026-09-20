@@ -40,9 +40,6 @@ type VersionInfo struct {
 //	latest —— 已是最新
 //	none   —— 仓库还没有 publish 过的 release（没有可下载的安装包）
 //	error  —— 网络不通 / 接口异常，Message 是给用户看的中文
-//
-// 网络类失败一律走 status + 中文 Message，不要回传 error：
-// Wails 会把 error 抛给前端 reject，用户看到的是 `Get "https://...": dial tcp` 这种英文原文。
 type UpdateResult struct {
 	Status  string       `json:"status"`
 	Message string       `json:"message"`

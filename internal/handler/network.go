@@ -68,11 +68,6 @@ var ipSources = []ipSource{
 }
 
 // GetIpInfo 查询 IP 归属信息，ip 为空时查询本机公网 IP。
-//
-// 数据源只接受 IP 字面量，域名先用本地 DNS 解析成 IP 再查询。
-//
-// 所有可预期的失败都通过 Status/Message 返回而不返回 error ——
-// 返回 error 会让 Wails 向前端抛异常，用户看到的就是一长串英文报错原文。
 func (a *NetworkHandler) GetIpInfo(ip string) (*IPInfo, error) {
 	query, failMsg := resolveQuery(ip)
 	if failMsg != "" {
